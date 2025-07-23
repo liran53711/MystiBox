@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MystiBox - 神秘盲盒世界</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <h1>MystiBox</h1>
+                <span class="brand-subtitle">神秘盲盒世界</span>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="#home" class="nav-link active">首页</a></li>
+                <li><a href="#boxes" class="nav-link">盲盒商店</a></li>
+                <li><a href="#collection" class="nav-link">我的收藏</a></li>
+                <li><a href="#friends" class="nav-link">好友</a></li>
+                <li><a href="#profile" class="nav-link">个人中心</a></li>
+            </ul>
+            <div class="nav-user">
+                <span class="user-balance">余额: ¥<span id="userBalance">100.00</span></span>
+                <button class="btn-login" id="loginBtn">登录</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主要内容区域 -->
+    <main class="main-content">
+        <!-- 首页 -->
+        <section id="home" class="page active">
+            <div class="hero-section">
+                <div class="hero-content">
+                    <h2 class="hero-title">探索神秘盲盒世界</h2>
+                    <p class="hero-subtitle">每一次开启，都是一次惊喜的冒险</p>
+                    <button class="btn-primary hero-btn">开始探索</button>
+                </div>
+            </div>
+
+            <!-- 热门盲盒 -->
+            <div class="featured-section">
+                <h3 class="section-title">热门盲盒</h3>
+                <div class="boxes-grid" id="featuredBoxes">
+                    <!-- 动态加载 -->
+                </div>
+            </div>
+        </section>
+
+        <!-- 盲盒商店 -->
+        <section id="boxes" class="page">
+            <div class="page-header">
+                <h2>盲盒商店</h2>
+                <div class="filters">
+                    <input type="text" id="searchBox" placeholder="搜索盲盒..." class="search-input">
+                    <select id="categoryFilter" class="filter-select">
+                        <option value="">全部分类</option>
+                        <option value="mystery">神秘系列</option>
+                        <option value="figure">手办系列</option>
+                        <option value="card">卡牌系列</option>
+                    </select>
+                </div>
+            </div>
+            <div class="boxes-grid" id="allBoxes">
+                <!-- 动态加载 -->
+            </div>
+        </section>
+
+        <!-- 我的收藏 -->
+        <section id="collection" class="page">
+            <div class="page-header">
+                <h2>我的收藏</h2>
+                <div class="collection-stats">
+                    <div class="stat-item">
+                        <span class="stat-number">0</span>
+                        <span class="stat-label">总物品</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">0</span>
+                        <span class="stat-label">稀有物品</span>
+                    </div>
+                </div>
+            </div>
+            <div class="collection-grid" id="userCollection">
+                <!-- 动态加载 -->
+            </div>
+        </section>
+
+        <!-- 好友系统 -->
+        <section id="friends" class="page">
+            <div class="page-header">
+                <h2>好友系统</h2>
+                <button class="btn-secondary" id="addFriendBtn">添加好友</button>
+            </div>
+            <div class="friends-content">
+                <div class="friends-list" id="friendsList">
+                    <!-- 动态加载 -->
+                </div>
+            </div>
+        </section>
+
+        <!-- 个人中心 -->
+        <section id="profile" class="page">
+            <div class="profile-header">
+                <div class="profile-avatar">
+                    <img src="https://via.placeholder.com/100" alt="头像" id="userAvatar">
+                </div>
+                <div class="profile-info">
+                    <h3 id="userName">游客</h3>
+                    <p id="userEmail">未登录</p>
+                </div>
+            </div>
+            <div class="profile-content">
+                <div class="profile-section">
+                    <h4>账户信息</h4>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">余额</span>
+                            <span class="info-value">¥<span id="profileBalance">0.00</span></span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">总消费</span>
+                            <span class="info-value">¥<span id="totalSpent">0.00</span></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 模态框 -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal()">&times;</span>
+            <div id="modalBody">
+                <!-- 动态内容 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 脚本文件 -->
+    <script src="js/mockAPI.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/boxes.js"></script>
+</body>
+</html>
