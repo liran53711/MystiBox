@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 全局样式 */
+@layer base {
+  html {
+    font-family: 'Lato', sans-serif;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Nunito', sans-serif;
+  }
+  
+  body {
+    @apply bg-neutral-bg text-neutral-text-primary;
+    background: linear-gradient(135deg, #87CEEB 0%, #FFDAB9 100%);
+    min-height: 100vh;
+  }
+}
+
+/* 组件样式 */
+@layer components {
+  .glass-card {
+    @apply bg-white/20 backdrop-blur-md border border-white/30 rounded-2xl shadow-lg;
+  }
+  
+  .btn-primary {
+    @apply bg-accent-500 hover:bg-accent-600 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg;
+  }
+  
+  .btn-secondary {
+    @apply bg-white/20 hover:bg-white/30 text-neutral-text-primary font-semibold py-3 px-6 rounded-xl border border-white/30 transition-all duration-300;
+  }
+}
