@@ -1,88 +1,35 @@
 const express = require('express');
+const { authenticate } = require('../middleware/auth');
+const prisma = require('../lib/prisma');
+const DrawAlgorithm = require('../lib/drawAlgorithm');
 const router = express.Router();
 
 // 获取所有盲盒系列
 router.get('/', async (req, res) => {
   try {
-    // TODO: 从数据库获取系列数据
-    const mockSeries = [
-      {
-        id: 1,
-        name: '森林精灵系列',
-        description: '来自神秘森林的可爱精灵们',
-        price: 100,
-        petCount: 12,
-        emoji: '🧚',
-        active: true
-      },
-      {
-        id: 2,
-        name: '海洋冒险系列',
-        description: '深海中的奇妙生物',
-        price: 120,
-        petCount: 15,
-        emoji: '🐠',
-        active: true
-      },
-      {
-        id: 3,
-        name: '星空守护系列',
-        description: '来自星空的神秘守护者',
-        price: 150,
-        petCount: 10,
-        emoji: '⭐',
-        active: true
+    const series = await prisma.series.findMany({
+      where: { isActive: true },
+      include: {
+        pets: {
+          select: { id: true }
+        }
       }
-    ];
+    });
 
-    const responseData = {
-      message: '获取系列列表成功',
-      data: mockSeries
-    };
+    const seriesWithCount = series.map(s => ({
+      id: s.id,
+      name: s.name,
+      description: s.description,
+      price: s.drawPrice,
+      image: s.coverImageUrl,
+      isActive: s.isActive,
+      petCount: s.pets.length,
+      createdAt: s.createdAt,
+      updatedAt: s.updatedAt
+    }));
 
-    // 如果是浏览器访问，返回HTML格式
-    if (req.headers.accept && req.headers.accept.includes('text/html')) {
-      res.send(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>MystiBox 盲盒系列</title>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
-            .container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-            .series-card { border: 1px solid #ddd; margin: 15px 0; padding: 20px; border-radius: 8px; background: #f8f9fa; }
-            .emoji { font-size: 2em; margin-right: 10px; }
-            .price { color: #28a745; font-weight: bold; }
-            pre { background: #f8f9fa; padding: 15px; border-radius: 5px; overflow-x: auto; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <h1>📦 MystiBox 盲盒系列</h1>
-            <p><strong>状态:</strong> ✅ ${responseData.message}</p>
-
-            <h2>🎁 可用系列:</h2>
-            ${mockSeries.map(series => `
-              <div class="series-card">
-                <h3><span class="emoji">${series.emoji}</span>${series.name}</h3>
-                <p><strong>描述:</strong> ${series.description}</p>
-                <p><strong>价格:</strong> <span class="price">${series.price} 积分</span></p>
-                <p><strong>宠物数量:</strong> ${series.petCount} 只</p>
-                <p><strong>状态:</strong> ${series.active ? '✅ 启用' : '❌ 禁用'}</p>
-              </div>
-            `).join('')}
-
-            <h3>📊 原始JSON数据:</h3>
-            <pre>${JSON.stringify(responseData, null, 2)}</pre>
-
-            <p><a href="/health">← 返回健康检查</a></p>
-          </div>
-        </body>
-        </html>
-      `);
-    } else {
-      res.json(responseData);
-    }
+    // 直接返回系列数组，不包装在data字段中
+    res.json(seriesWithCount);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -92,24 +39,126 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    // TODO: 从数据库获取系列详情
-    res.json({ 
-      message: `获取系列${id}详情功能开发中...`,
-      data: null 
+    const series = await prisma.series.findUnique({
+      where: { id: parseInt(id) },
+      include: {
+        pets: true
+      }
     });
+
+    if (!series) {
+      return res.status(404).json({ error: '系列不存在' });
+    }
+
+    // 格式化返回数据
+    const formattedSeries = {
+      id: series.id,
+      name: series.name,
+      description: series.description,
+      price: series.drawPrice,
+      image: series.coverImageUrl,
+      isActive: series.isActive,
+      createdAt: series.createdAt,
+      updatedAt: series.updatedAt,
+      pets: series.pets.map(pet => ({
+        id: pet.id,
+        name: pet.name,
+        rarity: pet.rarity,
+        story: pet.story,
+        babyImage: pet.babyImageUrl,
+        adultImage: pet.adultImageUrl
+      }))
+    };
+
+    res.json(formattedSeries);
   } catch (error) {
+    console.error('获取系列详情失败:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
 // 抽取盲盒
-router.post('/:id/draw', async (req, res) => {
+router.post('/:id/draw', authenticate, async (req, res) => {
   try {
     const { id } = req.params;
-    // TODO: 实现抽取逻辑
-    res.json({ 
-      message: `系列${id}抽取功能开发中...`,
-      data: null 
+    const userId = req.user.id;
+
+    const series = await prisma.series.findUnique({
+      where: { id, isActive: true },
+      include: { pets: true }
+    });
+
+    if (!series) {
+      return res.status(404).json({ error: '系列不存在或已禁用' });
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (user.points < series.price) {
+      return res.status(400).json({ error: '积分不足' });
+    }
+
+    // 获取用户抽取次数（用于保底机制）
+    const userDrawCount = await prisma.drawEvent.count({
+      where: { userId, seriesId: id }
+    });
+
+    // 使用抽取算法
+    const drawResult = DrawAlgorithm.performDraw(series.pets, {
+      algorithm: 'rarity',
+      userDrawCount,
+      enableShiny: true
+    });
+
+    const selectedPet = drawResult.pet;
+    const isShiny = drawResult.isShiny;
+
+    // 数据库事务
+    const result = await prisma.$transaction(async (tx) => {
+      // 扣除积分
+      await tx.user.update({
+        where: { id: userId },
+        data: { points: { decrement: series.price } }
+      });
+
+      // 创建抽取记录
+      const drawEvent = await tx.drawEvent.create({
+        data: {
+          userId,
+          seriesId: id,
+          petId: selectedPet.id,
+          cost: series.price,
+          isShiny
+        }
+      });
+
+      // 添加宠物到用户收藏
+      await tx.userPet.upsert({
+        where: {
+          userId_petId: { userId, petId: selectedPet.id }
+        },
+        update: { level: { increment: 1 } },
+        create: {
+          userId,
+          petId: selectedPet.id,
+          level: 1,
+          isShiny
+        }
+      });
+
+      return { drawEvent, pet: selectedPet };
+    });
+
+    res.json({
+      message: isShiny ? '恭喜！抽到闪光宠物！✨' : '抽取成功！',
+      data: {
+        pet: {
+          ...result.pet,
+          isShiny,
+          rarity: selectedPet.rarity
+        },
+        remainingPoints: user.points - series.price,
+        drawCount: userDrawCount + 1
+      }
     });
   } catch (error) {
     res.status(500).json({ error: error.message });

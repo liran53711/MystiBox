@@ -5,6 +5,9 @@
       <RouterView />
     </main>
     <Footer />
+
+    <!-- 登录模态框 -->
+    <LoginModal />
   </div>
 </template>
 
@@ -13,6 +16,7 @@ import { onMounted } from 'vue'
 import { useAuthStore } from '@/store/auth'
 import Navbar from '@/components/layout/Navbar.vue'
 import Footer from '@/components/layout/Footer.vue'
+import LoginModal from '@/components/auth/LoginModal.vue'
 
 const authStore = useAuthStore()
 

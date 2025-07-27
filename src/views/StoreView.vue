@@ -1,11 +1,20 @@
 <template>
   <div class="container mx-auto px-4 py-8">
     <h1 class="text-3xl font-bold text-neutral-text-primary mb-8">盲盒商店</h1>
-    
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div v-for="series in mockSeries" :key="series.id" class="glass-card p-6">
-        <div class="aspect-square bg-gradient-to-br from-accent-400 to-accent-600 rounded-lg mb-4 flex items-center justify-center">
-          <span class="text-4xl">{{ series.emoji }}</span>
+
+    <div v-if="loading" class="text-center py-8">
+      <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-accent-500"></div>
+      <p class="mt-2 text-neutral-text-secondary">加载中...</p>
+    </div>
+
+    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div v-for="series in seriesList" :key="series.id" class="glass-card p-6">
+        <div class="aspect-square rounded-lg mb-4 overflow-hidden">
+          <img
+            :src="series.image"
+            :alt="series.name"
+            class="w-full h-full object-cover"
+          />
         </div>
         <h3 class="text-xl font-semibold text-neutral-text-primary mb-2">{{ series.name }}</h3>
         <p class="text-neutral-text-secondary mb-4">{{ series.description }}</p>
@@ -21,30 +30,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { seriesApi } from '@/api/series'
 import BaseButton from '@/components/base/BaseButton.vue'
+import type { Series } from '@/types'
 
-const mockSeries = ref([
-  {
-    id: 1,
-    name: '森林精灵系列',
-    description: '来自神秘森林的可爱精灵们',
-    price: 100,
-    emoji: '🧚'
-  },
-  {
-    id: 2,
-    name: '海洋冒险系列',
-    description: '深海中的奇妙生物',
-    price: 120,
-    emoji: '🐠'
-  },
-  {
-    id: 3,
-    name: '星空守护系列',
-    description: '来自星空的神秘守护者',
-    price: 150,
-    emoji: '⭐'
+const seriesList = ref<Series[]>([])
+const loading = ref(true)
+
+onMounted(async () => {
+  try {
+    seriesList.value = await seriesApi.getAll()
+  } catch (error) {
+    console.error('加载系列失败:', error)
+  } finally {
+    loading.value = false
   }
-])
+})
 </script>

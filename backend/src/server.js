@@ -2,7 +2,6 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
-const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const app = express();
@@ -17,13 +16,13 @@ app.use(cors({
   credentials: true
 }));
 
-// 请求限制
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15分钟
-  max: 100, // 限制每个IP 15分钟内最多100个请求
-  message: '请求过于频繁，请稍后再试'
-});
-app.use(limiter);
+// 请求限制 (暂时禁用)
+// const limiter = rateLimit({
+//   windowMs: 15 * 60 * 1000, // 15分钟
+//   max: 100, // 限制每个IP 15分钟内最多100个请求
+//   message: '请求过于频繁，请稍后再试'
+// });
+// app.use(limiter);
 
 // 日志中间件
 app.use(morgan('combined'));
@@ -90,6 +89,7 @@ app.use('/api/series', require('./routes/series'));
 app.use('/api/pets', require('./routes/pets'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/draw', require('./routes/draw'));
 
 // 404处理
 app.use('*', (req, res) => {

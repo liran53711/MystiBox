@@ -34,6 +34,14 @@ export const useUiStore = defineStore('ui', () => {
     showLoginModal.value = false
   }
 
+  function closeLoginModal() {
+    showLoginModal.value = false
+  }
+
+  function closeRegisterModal() {
+    showRegisterModal.value = false
+  }
+
   function closeModals() {
     showLoginModal.value = false
     showRegisterModal.value = false
@@ -51,6 +59,8 @@ export const useUiStore = defineStore('ui', () => {
     endGacha,
     openLoginModal,
     openRegisterModal,
+    closeLoginModal,
+    closeRegisterModal,
     closeModals
   }
 })

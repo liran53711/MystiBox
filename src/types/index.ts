@@ -8,11 +8,11 @@ export interface User {
 }
 
 export interface Series {
-  id: string
+  id: number
   name: string
   description?: string
-  coverImageUrl?: string
-  drawPrice: number
+  image?: string
+  price: number
   isActive: boolean
   availableFrom?: string
   availableUntil?: string
@@ -24,14 +24,21 @@ export interface Series {
 export interface Pet {
   id: string
   name: string
-  rarity: 'NORMAL' | 'RARE' | 'SR' | 'SSR'
-  babyImageUrl: string
-  adultImageUrl: string
+  description?: string
+  rarity: number // 1-5 稀有度等级
+  image: string
   story?: string
-  seriesId: string
+  seriesId: number
   series?: Series
   createdAt: string
   updatedAt: string
+}
+
+export interface DrawResult {
+  pet: Pet
+  isNew: boolean
+  pointsSpent: number
+  remainingPoints: number
 }
 
 export interface UserPet {
@@ -48,7 +55,7 @@ export interface UserPet {
 export interface DrawEvent {
   id: string
   userId: string
-  seriesId: string
+  seriesId: number
   amount: number
   totalCost: number
   createdAt: string

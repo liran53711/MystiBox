@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MystiBox - 宠物盲盒</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #87CEEB 0%, #FFDAB9 100%);
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen">
+    <div id="app">
+        <!-- 导航栏 -->
+        <nav class="glass-card p-4 mb-8">
+            <div class="container mx-auto flex justify-between items-center">
+                <h1 class="text-2xl font-bold text-white">🎁 MystiBox</h1>
+                <div class="space-x-4">
+                    <button onclick="showLogin()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">登录</button>
+                    <span id="userInfo" class="text-white hidden"></span>
+                </div>
+            </div>
+        </nav>
+
+        <!-- 主要内容 -->
+        <div class="container mx-auto px-4">
+            <!-- 欢迎区域 -->
+            <div class="text-center py-16 mb-12">
+                <h1 class="text-5xl font-bold text-white mb-6">
+                    欢迎来到 <span class="text-yellow-300">MystiBox</span>
+                </h1>
+                <p class="text-xl text-white mb-8 max-w-2xl mx-auto">
+                    探索神秘的宠物世界，收集可爱的伙伴，体验充满惊喜的开盒乐趣
+                </p>
+                <button onclick="showStore()" class="bg-yellow-500 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-yellow-600 transform hover:scale-105 transition-all">
+                    🎮 开始探索
+                </button>
+            </div>
+
+            <!-- 盲盒商店 -->
+            <div id="store" class="hidden">
+                <h2 class="text-3xl font-bold text-white text-center mb-8">🛍️ 盲盒商店</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="seriesList">
+                    <!-- 系列卡片将通过JavaScript动态生成 -->
+                </div>
+            </div>
+
+            <!-- 系列详情 -->
+            <div id="seriesDetail" class="hidden">
+                <div class="max-w-4xl mx-auto">
+                    <button onclick="showStore()" class="mb-4 text-white hover:text-yellow-300">← 返回商店</button>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div class="aspect-square rounded-lg overflow-hidden">
+                            <img id="seriesImage" class="w-full h-full object-cover" />
+                        </div>
+                        <div class="glass-card p-6">
+                            <h1 id="seriesName" class="text-3xl font-bold text-white mb-4"></h1>
+                            <p id="seriesDescription" class="text-white mb-6"></p>
+                            
+                            <div class="mb-6">
+                                <div class="flex justify-between mb-2">
+                                    <span class="text-white">价格:</span>
+                                    <span id="seriesPrice" class="font-bold text-yellow-300"></span>
+                                </div>
+                                <div class="flex justify-between mb-2">
+                                    <span class="text-white">我的积分:</span>
+                                    <span id="userPoints" class="font-bold text-green-300">1000</span>
+                                </div>
+                            </div>
+                            
+                            <button id="drawButton" onclick="drawPet()" class="w-full bg-red-500 text-white py-3 px-6 rounded-lg text-lg font-semibold hover:bg-red-600 transform hover:scale-105 transition-all">
+                                🎲 抽取盲盒
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 登录模态框 -->
+        <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+            <div class="glass-card p-6 max-w-md w-full mx-4">
+                <h2 class="text-2xl font-bold text-white text-center mb-6">登录</h2>
+                <div class="space-y-4">
+                    <input id="username" type="text" placeholder="用户名" class="w-full px-4 py-2 rounded border" value="testuser">
+                    <input id="password" type="password" placeholder="密码" class="w-full px-4 py-2 rounded border" value="test123456">
+                    <button onclick="login()" class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600">登录</button>
+                    <button onclick="hideLogin()" class="w-full bg-gray-500 text-white py-2 rounded hover:bg-gray-600">取消</button>
+                </div>
+                <p class="text-sm text-white mt-4 text-center">测试账号: testuser / test123456</p>
+            </div>
+        </div>
+
+        <!-- 抽取结果模态框 -->
+        <div id="resultModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+            <div class="glass-card p-6 max-w-md w-full mx-4 text-center">
+                <h2 class="text-2xl font-bold text-white mb-4">🎉 恭喜获得</h2>
+                <div class="mb-4">
+                    <img id="resultImage" class="w-32 h-32 mx-auto rounded-lg mb-4" />
+                    <h3 id="resultName" class="text-xl font-bold text-white mb-2"></h3>
+                    <p id="resultDescription" class="text-white text-sm mb-4"></p>
+                    <div id="resultRarity" class="flex justify-center space-x-1 mb-4">
+                        <!-- 星级显示 -->
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <button onclick="hideResult()" class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600">继续抽取</button>
+                    <p class="text-sm text-white">剩余积分: <span id="remainingPoints"></span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局状态
+        let currentUser = null;
+        let currentSeries = null;
+        
+        // 模拟数据
+        const mockSeries = [
+            {
+                id: 1,
+                name: '森林精灵系列',
+                description: '来自神秘森林的可爱精灵们，每一只都拥有独特的魔法能力',
+                image: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=400&fit=crop',
+                price: 100,
+                pets: [
+                    { id: '1', name: '小精灵', rarity: 1, description: '来自森林的小精灵', image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=300&fit=crop' },
+                    { id: '2', name: '森林守护者', rarity: 2, description: '守护森林的精灵', image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=300&fit=crop' },
+                    { id: '3', name: '古树之灵', rarity: 3, description: '千年古树的灵魂', image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=300&fit=crop' },
+                    { id: '4', name: '森林女王', rarity: 4, description: '森林的统治者', image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=300&fit=crop' }
+                ]
+            },
+            {
+                id: 2,
+                name: '海洋冒险系列',
+                description: '深海中的奇妙生物，带你探索未知的海底世界',
+                image: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=400&h=400&fit=crop',
+                price: 120,
+                pets: [
+                    { id: '5', name: '小海星', rarity: 1, description: '可爱的小海星', image: 'https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=300&h=300&fit=crop' },
+                    { id: '6', name: '珊瑚精灵', rarity: 2, description: '珊瑚礁的守护者', image: 'https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=300&h=300&fit=crop' },
+                    { id: '7', name: '深海巨兽', rarity: 3, description: '深海的神秘生物', image: 'https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=300&h=300&fit=crop' },
+                    { id: '8', name: '海洋之王', rarity: 4, description: '统治海洋的王者', image: 'https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=300&h=300&fit=crop' }
+                ]
+            },
+            {
+                id: 3,
+                name: '星空守护系列',
+                description: '来自星空的神秘守护者，守护着宇宙的秘密',
+                image: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=400&h=400&fit=crop',
+                price: 150,
+                pets: [
+                    { id: '9', name: '小星星', rarity: 1, description: '闪闪发光的小星星', image: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=300&h=300&fit=crop' },
+                    { id: '10', name: '月亮精灵', rarity: 2, description: '月光下的精灵', image: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=300&h=300&fit=crop' },
+                    { id: '11', name: '星座守护者', rarity: 3, description: '守护星座的使者', image: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=300&h=300&fit=crop' },
+                    { id: '12', name: '宇宙之神', rarity: 5, description: '创造宇宙的神明', image: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=300&h=300&fit=crop' }
+                ]
+            }
+        ];
+
+        // 显示/隐藏功能
+        function showLogin() {
+            document.getElementById('loginModal').classList.remove('hidden');
+        }
+
+        function hideLogin() {
+            document.getElementById('loginModal').classList.add('hidden');
+        }
+
+        function showStore() {
+            document.getElementById('store').classList.remove('hidden');
+            document.getElementById('seriesDetail').classList.add('hidden');
+            renderSeries();
+        }
+
+        function showSeriesDetail(seriesId) {
+            currentSeries = mockSeries.find(s => s.id === seriesId);
+            if (!currentSeries) return;
+
+            document.getElementById('store').classList.add('hidden');
+            document.getElementById('seriesDetail').classList.remove('hidden');
+            
+            document.getElementById('seriesImage').src = currentSeries.image;
+            document.getElementById('seriesName').textContent = currentSeries.name;
+            document.getElementById('seriesDescription').textContent = currentSeries.description;
+            document.getElementById('seriesPrice').textContent = currentSeries.price + ' 积分';
+            
+            updateDrawButton();
+        }
+
+        function hideResult() {
+            document.getElementById('resultModal').classList.add('hidden');
+        }
+
+        // 登录功能
+        function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if ((username === 'testuser' && password === 'test123456') || 
+                (username === 'demo' && password === 'demo123')) {
+                currentUser = {
+                    username: username,
+                    points: 1000
+                };
+                
+                document.getElementById('userInfo').textContent = `${username} (${currentUser.points}积分)`;
+                document.getElementById('userInfo').classList.remove('hidden');
+                document.querySelector('button[onclick="showLogin()"]').classList.add('hidden');
+                
+                hideLogin();
+                updateDrawButton();
+                alert('登录成功！');
+            } else {
+                alert('用户名或密码错误');
+            }
+        }
+
+        // 渲染系列列表
+        function renderSeries() {
+            const container = document.getElementById('seriesList');
+            container.innerHTML = mockSeries.map(series => `
+                <div class="glass-card p-6 cursor-pointer hover:scale-105 transition-transform" onclick="showSeriesDetail(${series.id})">
+                    <img src="${series.image}" alt="${series.name}" class="w-full h-48 object-cover rounded-lg mb-4">
+                    <h3 class="text-xl font-bold text-white mb-2">${series.name}</h3>
+                    <p class="text-white text-sm mb-4">${series.description}</p>
+                    <div class="flex justify-between items-center">
+                        <span class="text-yellow-300 font-bold">${series.price} 积分</span>
+                        <span class="text-white text-sm">${series.pets.length} 只宠物</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 更新抽取按钮状态
+        function updateDrawButton() {
+            const button = document.getElementById('drawButton');
+            const pointsSpan = document.getElementById('userPoints');
+            
+            if (currentUser) {
+                pointsSpan.textContent = currentUser.points;
+                if (currentSeries && currentUser.points >= currentSeries.price) {
+                    button.disabled = false;
+                    button.textContent = `🎲 抽取盲盒 (${currentSeries.price} 积分)`;
+                    button.className = 'w-full bg-red-500 text-white py-3 px-6 rounded-lg text-lg font-semibold hover:bg-red-600 transform hover:scale-105 transition-all';
+                } else {
+                    button.disabled = true;
+                    button.textContent = '积分不足';
+                    button.className = 'w-full bg-gray-500 text-white py-3 px-6 rounded-lg text-lg font-semibold cursor-not-allowed';
+                }
+            } else {
+                pointsSpan.textContent = '未登录';
+                button.disabled = true;
+                button.textContent = '请先登录';
+                button.className = 'w-full bg-gray-500 text-white py-3 px-6 rounded-lg text-lg font-semibold cursor-not-allowed';
+            }
+        }
+
+        // 抽取宠物
+        function drawPet() {
+            if (!currentUser || !currentSeries || currentUser.points < currentSeries.price) {
+                alert('无法抽取');
+                return;
+            }
+
+            // 稀有度权重
+            const rarityWeights = { 1: 50, 2: 30, 3: 15, 4: 4, 5: 1 };
+            const random = Math.random() * 100;
+            let targetRarity = 1;
+            let cumulative = 0;
+
+            for (const [rarity, weight] of Object.entries(rarityWeights)) {
+                cumulative += weight;
+                if (random <= cumulative) {
+                    targetRarity = parseInt(rarity);
+                    break;
+                }
+            }
+
+            // 选择宠物
+            const availablePets = currentSeries.pets.filter(p => p.rarity === targetRarity);
+            const finalPets = availablePets.length > 0 ? availablePets : currentSeries.pets.filter(p => p.rarity === 1);
+            const pet = finalPets[Math.floor(Math.random() * finalPets.length)];
+
+            // 扣除积分
+            currentUser.points -= currentSeries.price;
+
+            // 显示结果
+            document.getElementById('resultImage').src = pet.image;
+            document.getElementById('resultName').textContent = pet.name;
+            document.getElementById('resultDescription').textContent = pet.description;
+            document.getElementById('remainingPoints').textContent = currentUser.points;
+            
+            // 显示星级
+            const rarityContainer = document.getElementById('resultRarity');
+            rarityContainer.innerHTML = '';
+            for (let i = 1; i <= 5; i++) {
+                const star = document.createElement('div');
+                star.className = `w-4 h-4 rounded-full ${i <= pet.rarity ? 'bg-yellow-400' : 'bg-gray-400'}`;
+                rarityContainer.appendChild(star);
+            }
+
+            document.getElementById('resultModal').classList.remove('hidden');
+            updateDrawButton();
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            renderSeries();
+        });
+    </script>
+</body>
+</html>

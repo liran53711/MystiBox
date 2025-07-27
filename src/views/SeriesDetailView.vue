@@ -1,17 +1,28 @@
 <template>
   <div class="container mx-auto px-4 py-8">
-    <div v-if="series" class="max-w-4xl mx-auto">
+    <!-- 加载状态 -->
+    <div v-if="loading" class="text-center py-16">
+      <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-accent-500"></div>
+      <p class="mt-2 text-neutral-text-secondary">加载中...</p>
+    </div>
+
+    <!-- 系列详情 -->
+    <div v-else-if="series" class="max-w-4xl mx-auto">
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <!-- 系列图片 -->
-        <div class="aspect-square bg-gradient-to-br from-accent-400 to-accent-600 rounded-lg flex items-center justify-center">
-          <span class="text-8xl">{{ series.emoji }}</span>
+        <div class="aspect-square rounded-lg overflow-hidden">
+          <img
+            :src="series.image"
+            :alt="series.name"
+            class="w-full h-full object-cover"
+          />
         </div>
-        
+
         <!-- 系列信息 -->
         <div>
           <h1 class="text-3xl font-bold text-neutral-text-primary mb-4">{{ series.name }}</h1>
           <p class="text-neutral-text-secondary mb-6">{{ series.description }}</p>
-          
+
           <div class="glass-card p-6 mb-6">
             <h3 class="text-xl font-semibold text-neutral-text-primary mb-4">系列信息</h3>
             <div class="space-y-2">
@@ -21,7 +32,7 @@
               </div>
               <div class="flex justify-between">
                 <span class="text-neutral-text-secondary">宠物数量:</span>
-                <span class="font-semibold">{{ series.petCount }} 只</span>
+                <span class="font-semibold">{{ series.pets?.length || 0 }} 只</span>
               </div>
               <div class="flex justify-between">
                 <span class="text-neutral-text-secondary">稀有度:</span>
@@ -29,14 +40,52 @@
               </div>
             </div>
           </div>
-          
-          <BaseButton variant="primary" size="lg" full-width @click="handleDraw">
-            抽取盲盒 ({{ series.price }} 积分)
+
+          <!-- 用户积分显示 -->
+          <div v-if="authStore.isAuthenticated" class="glass-card p-4 mb-6">
+            <div class="flex items-center justify-between">
+              <span class="text-neutral-text-secondary">我的积分:</span>
+              <span class="font-bold text-lg text-yellow-500">{{ authStore.user?.points || 0 }}</span>
+            </div>
+          </div>
+
+          <!-- 错误提示 -->
+          <div v-if="errorMessage" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p class="text-sm text-red-700">{{ errorMessage }}</p>
+          </div>
+
+          <!-- 抽取按钮 -->
+          <BaseButton
+            v-if="authStore.isAuthenticated"
+            variant="primary"
+            size="lg"
+            :loading="isDrawing"
+            :disabled="!canDraw"
+            class="w-full"
+            @click="handleDraw"
+          >
+            {{ isDrawing ? '抽取中...' : `抽取盲盒 (${series.price} 积分)` }}
           </BaseButton>
+
+          <!-- 未登录提示 -->
+          <div v-else class="text-center">
+            <p class="text-neutral-text-secondary mb-4">请先登录才能抽取盲盒</p>
+            <BaseButton variant="primary" @click="uiStore.openLoginModal">
+              立即登录
+            </BaseButton>
+          </div>
         </div>
       </div>
+
+      <!-- 抽取结果模态框 -->
+      <DrawResultModal
+        v-if="drawResult"
+        :result="drawResult"
+        @close="drawResult = null"
+      />
     </div>
-    
+
+    <!-- 系列不存在 -->
     <div v-else class="text-center py-16">
       <p class="text-neutral-text-secondary">系列不存在</p>
     </div>
@@ -44,22 +93,70 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import BaseButton from '@/components/base/BaseButton.vue'
+import DrawResultModal from '@/components/DrawResultModal.vue'
+import { useAuthStore } from '@/store/auth'
+import { useUIStore } from '@/store/ui'
+import { seriesApi } from '@/api/series'
+import { drawApi } from '@/api/draw'
+import type { Series, DrawResult } from '@/types'
 
 const route = useRoute()
+const authStore = useAuthStore()
+const uiStore = useUIStore()
+
 const seriesId = computed(() => Number(route.params.id))
+const series = ref<Series | null>(null)
+const loading = ref(true)
+const isDrawing = ref(false)
+const errorMessage = ref('')
+const drawResult = ref<DrawResult | null>(null)
 
-const mockSeriesData = {
-  1: { id: 1, name: '森林精灵系列', description: '来自神秘森林的可爱精灵们，每一只都拥有独特的魔法能力', price: 100, petCount: 12, emoji: '🧚' },
-  2: { id: 2, name: '海洋冒险系列', description: '深海中的奇妙生物，带你探索未知的海底世界', price: 120, petCount: 15, emoji: '🐠' },
-  3: { id: 3, name: '星空守护系列', description: '来自星空的神秘守护者，守护着宇宙的秘密', price: 150, petCount: 10, emoji: '⭐' }
+// 检查是否可以抽取
+const canDraw = computed(() => {
+  if (!authStore.isAuthenticated || !series.value) return false
+  return (authStore.user?.points || 0) >= series.value.price
+})
+
+// 加载系列详情
+const loadSeries = async () => {
+  try {
+    loading.value = true
+    errorMessage.value = ''
+    const data = await seriesApi.getById(seriesId.value)
+    series.value = data
+  } catch (error) {
+    console.error('Failed to load series:', error)
+    errorMessage.value = '加载系列信息失败'
+  } finally {
+    loading.value = false
+  }
 }
 
-const series = computed(() => mockSeriesData[seriesId.value as keyof typeof mockSeriesData])
+// 处理抽取
+const handleDraw = async () => {
+  if (!series.value || !authStore.isAuthenticated) return
 
-const handleDraw = () => {
-  alert('抽取功能暂未实现，需要后端支持')
+  try {
+    isDrawing.value = true
+    errorMessage.value = ''
+
+    const result = await drawApi.drawPet(series.value.id)
+    drawResult.value = result
+
+    // 更新用户积分
+    await authStore.refreshUser()
+  } catch (error: any) {
+    console.error('Draw failed:', error)
+    errorMessage.value = error.response?.data?.message || '抽取失败，请重试'
+  } finally {
+    isDrawing.value = false
+  }
 }
+
+onMounted(() => {
+  loadSeries()
+})
 </script>

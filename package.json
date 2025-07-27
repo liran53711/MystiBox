@@ -1,30 +1,25 @@
 {
-  "name": "mystibox-frontend",
-  "private": true,
-  "version": "0.0.0",
+  "name": "mystibox",
+  "version": "1.0.0",
+  "description": "MystiBox - 神秘宠物盲盒收藏游戏",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc && vite build",
     "preview": "vite preview",
-    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix",
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
     "format": "prettier --write src/"
   },
   "dependencies": {
-    "vue": "^3.4.0",
-    "vue-router": "^4.2.5",
+    "axios": "^1.6.2",
     "pinia": "^2.1.7",
-    "@vueuse/core": "^10.7.0",
-    "axios": "^1.6.0",
-    "zod": "^3.22.4"
+    "vite": "^7.0.6",
+    "vue": "^3.4.0",
+    "vue-router": "^4.2.5"
   },
   "devDependencies": {
-    "@types/node": "^20.10.0",
-    "@typescript-eslint/eslint-plugin": "^6.14.0",
-    "@typescript-eslint/parser": "^6.14.0",
+    "@types/node": "^20.10.4",
     "@vitejs/plugin-vue": "^4.5.2",
-    "@vue/eslint-config-prettier": "^8.0.0",
-    "@vue/eslint-config-typescript": "^12.0.0",
     "autoprefixer": "^10.4.16",
     "eslint": "^8.55.0",
     "eslint-plugin-vue": "^9.19.2",
@@ -32,7 +27,6 @@
     "prettier": "^3.1.1",
     "tailwindcss": "^3.3.6",
     "typescript": "^5.2.2",
-    "vite": "^5.0.8",
     "vue-tsc": "^1.8.25"
   }
 }
