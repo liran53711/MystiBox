@@ -36,6 +36,12 @@ const router = createRouter({
       component: () => import('@/views/PlazaView.vue')
     },
     {
+      path: '/history',
+      name: 'DrawHistory',
+      component: () => import('@/views/DrawHistoryView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/my-account',
       name: 'MyAccount',
       component: () => import('@/views/MyAccountView.vue'),
@@ -51,15 +57,20 @@ const router = createRouter({
     {
       path: '/admin',
       name: 'Admin',
-      component: () => import('@/views/admin/DashboardView.vue'),
-      meta: { requiresAuth: true, requiresAdmin: true },
-      children: [
-        {
-          path: 'series',
-          name: 'AdminSeries',
-          component: () => import('@/views/admin/SeriesManagementView.vue')
-        }
-      ]
+      component: () => import('@/views/AdminView.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true }
+    },
+    {
+      path: '/friends',
+      name: 'Friends',
+      component: () => import('@/views/FriendsView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/gifts',
+      name: 'Gifts',
+      component: () => import('@/views/GiftsView.vue'),
+      meta: { requiresAuth: true }
     },
     {
       path: '/login',

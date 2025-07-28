@@ -1,5 +1,5 @@
 <template>
-  <div id="app" class="min-h-screen">
+  <div id="app" class="min-h-screen" style="background-color: var(--color-bg-primary);">
     <Navbar />
     <main class="container mx-auto px-4 py-8">
       <RouterView />

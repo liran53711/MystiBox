@@ -1,0 +1,279 @@
+/* MystiBox Design System - 基于文档规范的完整设计系统 */
+
+/* 导入Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Nunito:wght@700;900&display=swap');
+
+:root {
+  /* 主色调 (天空与海洋) */
+  --color-primary: #87CEEB; /* 柔和天空蓝 */
+  
+  /* 辅助色 (阳光与活力) */
+  --color-secondary: #FFDAB9; /* 蜜桃橘 */
+  
+  /* 强调/行动色 (Call-to-Action) */
+  --color-accent: #FF6F61; /* 活力珊瑚粉 */
+  --color-accent-hover: #FF8B82; /* Hover状态 */
+  --color-accent-active: #E66357; /* Active/Click状态 */
+  
+  /* 中性色系 */
+  --color-bg-primary: #F9F9F9; /* 主背景 */
+  --color-text-primary: #333333; /* 一级文本/标题 */
+  --color-text-secondary: #666666; /* 二级文本/描述 */
+  --color-text-disabled: #AAAAAA; /* 禁用/占位符文本 */
+  --color-border: #EAEAEA; /* 边框/分割线 */
+  
+  /* 状态色 */
+  --color-success: #28a745; /* 成功 */
+  --color-warning: #ffc107; /* 警告 */
+  --color-error: #dc3545; /* 错误 */
+  
+  /* 稀有度核心色板 */
+  --color-rarity-n: #B0C4DE; /* Normal - 柔和石灰 */
+  --color-rarity-r: #89CFF0; /* Rare - 星光蓝 */
+  --color-rarity-sr: #9370DB; /* Super Rare - 神秘紫罗兰 */
+  --color-rarity-ssr: #FFD700; /* Super Super Rare - 辉煌流金 */
+  --color-rarity-ur: linear-gradient(45deg, #ff2525, #ff7b00, #fffb00, #48ff00, #00ffd5, #002bff, #7a00ff); /* Ultra Rare - 虹光幻彩 */
+  
+  /* 字体系统 */
+  --font-heading: 'Nunito', sans-serif;
+  --font-body: 'Lato', sans-serif;
+  
+  /* 字体大小 */
+  --text-xs: 0.75rem; /* 12px */
+  --text-sm: 0.875rem; /* 14px */
+  --text-base: 1rem; /* 16px */
+  --text-lg: 1.125rem; /* 18px */
+  --text-xl: 1.25rem; /* 20px */
+  --text-2xl: 1.5rem; /* 24px */
+  --text-3xl: 1.875rem; /* 30px */
+  --text-4xl: 2.25rem; /* 36px */
+  
+  /* 间距系统 */
+  --spacing-xs: 0.25rem; /* 4px */
+  --spacing-sm: 0.5rem; /* 8px */
+  --spacing-md: 1rem; /* 16px */
+  --spacing-lg: 1.5rem; /* 24px */
+  --spacing-xl: 2rem; /* 32px */
+  --spacing-2xl: 3rem; /* 48px */
+  
+  /* 圆角系统 */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  
+  /* 阴影系统 */
+  --shadow-card: 0px 4px 6px rgba(0, 0, 0, 0.05), 0px 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-card-hover: 0px 8px 12px rgba(0, 0, 0, 0.07), 0px 3px 6px rgba(0, 0, 0, 0.12);
+  --shadow-modal: 0px 20px 25px rgba(0, 0, 0, 0.1), 0px 10px 10px rgba(0, 0, 0, 0.04);
+  
+  /* 过渡动画 */
+  --transition-smooth: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+  --transition-fast: all 0.15s ease-out;
+}
+
+/* 全局样式重置 */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  line-height: 1.6;
+  margin: 0;
+  padding: 0;
+}
+
+/* 标题样式 */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0;
+}
+
+h1 { font-size: var(--text-4xl); }
+h2 { font-size: var(--text-3xl); }
+h3 { font-size: var(--text-2xl); }
+h4 { font-size: var(--text-xl); }
+h5 { font-size: var(--text-lg); }
+h6 { font-size: var(--text-base); }
+
+/* 基础卡片样式 */
+.card {
+  background: white;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+  transition: var(--transition-smooth);
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-card-hover);
+}
+
+/* 稀有度卡片边框 */
+.card-rarity-n { border-color: var(--color-rarity-n); }
+.card-rarity-r { border-color: var(--color-rarity-r); }
+.card-rarity-sr { border-color: var(--color-rarity-sr); }
+.card-rarity-ssr { border-color: var(--color-rarity-ssr); }
+.card-rarity-ur { 
+  border: 2px solid;
+  border-image: var(--color-rarity-ur) 1;
+}
+
+/* 按钮基础样式 */
+.btn {
+  font-family: var(--font-body);
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  padding: 12px 24px;
+  border: none;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* 主按钮 */
+.btn-primary {
+  background-color: var(--color-accent);
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--color-accent-hover);
+}
+
+.btn-primary:active {
+  background-color: var(--color-accent-active);
+  transform: scale(0.98);
+}
+
+/* 次要按钮 */
+.btn-secondary {
+  background-color: transparent;
+  border: 1px solid var(--color-accent);
+  color: var(--color-accent);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: #FFF0F0;
+}
+
+/* 禁用按钮 */
+.btn:disabled {
+  background-color: var(--color-border);
+  color: var(--color-text-disabled);
+  border-color: var(--color-border);
+}
+
+/* 输入框样式 */
+.input {
+  font-family: var(--font-body);
+  padding: 12px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: white;
+  color: var(--color-text-primary);
+  transition: var(--transition-fast);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(255, 111, 97, 0.1);
+}
+
+.input::placeholder {
+  color: var(--color-text-disabled);
+}
+
+/* 模态框样式 */
+.modal-overlay {
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+}
+
+.modal-content {
+  background-color: white;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-modal);
+  animation: modalEnter 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+@keyframes modalEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* 稀有度标签 */
+.rarity-badge {
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: white;
+  text-transform: uppercase;
+}
+
+.rarity-badge-n { background-color: var(--color-rarity-n); }
+.rarity-badge-r { background-color: var(--color-rarity-r); }
+.rarity-badge-sr { background-color: var(--color-rarity-sr); }
+.rarity-badge-ssr { background-color: var(--color-rarity-ssr); color: var(--color-text-primary); }
+.rarity-badge-ur { 
+  background: var(--color-rarity-ur);
+  animation: rainbow 2s linear infinite;
+}
+
+@keyframes rainbow {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
+/* 工具类 */
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+
+.w-full { width: 100%; }
+.h-full { height: 100%; }
+
+.p-sm { padding: var(--spacing-sm); }
+.p-md { padding: var(--spacing-md); }
+.p-lg { padding: var(--spacing-lg); }
+
+.m-sm { margin: var(--spacing-sm); }
+.m-md { margin: var(--spacing-md); }
+.m-lg { margin: var(--spacing-lg); }
+
+.mb-sm { margin-bottom: var(--spacing-sm); }
+.mb-md { margin-bottom: var(--spacing-md); }
+.mb-lg { margin-bottom: var(--spacing-lg); }
+
+.mt-sm { margin-top: var(--spacing-sm); }
+.mt-md { margin-top: var(--spacing-md); }
+.mt-lg { margin-top: var(--spacing-lg); }

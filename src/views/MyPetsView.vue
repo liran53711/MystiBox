@@ -1,36 +1,44 @@
 <template>
   <div class="container mx-auto px-4 py-8">
-    <div class="flex justify-between items-center mb-8">
-      <h1 class="text-3xl font-bold">我的宠物收藏</h1>
-      <div class="text-sm text-gray-600">
-        共 {{ userPets.length }} 只宠物
-      </div>
+    <div class="text-center mb-8">
+      <h1 class="mb-4" style="font-family: var(--font-heading); font-size: var(--text-4xl); color: var(--color-text-primary); font-weight: 900;">
+        🏠 我的宠物收藏
+      </h1>
+      <p style="font-size: var(--text-lg); color: var(--color-text-secondary); font-family: var(--font-body);">
+        共 {{ userPets.length }} 只可爱的伙伴
+      </p>
     </div>
 
     <div v-if="authStore.isAuthenticated">
       <!-- 筛选器 -->
-      <div class="mb-6 flex flex-wrap gap-4">
-        <select v-model="filterRarity" class="px-3 py-2 border rounded-lg">
-          <option value="">全部稀有度</option>
-          <option value="N">普通 (N)</option>
-          <option value="R">稀有 (R)</option>
-          <option value="SR">史诗 (SR)</option>
-          <option value="SSR">传说 (SSR)</option>
-          <option value="UR">神话 (UR)</option>
-        </select>
+      <div class="card p-4 mb-8">
+        <div class="flex flex-col md:flex-row gap-4 items-center">
+          <div class="flex gap-4">
+            <select v-model="filterRarity" class="input">
+              <option value="">全部稀有度</option>
+              <option value="N">普通 (N)</option>
+              <option value="R">稀有 (R)</option>
+              <option value="SR">史诗 (SR)</option>
+              <option value="SSR">传说 (SSR)</option>
+              <option value="UR">神话 (UR)</option>
+            </select>
 
-        <select v-model="filterStatus" class="px-3 py-2 border rounded-lg">
-          <option value="">全部状态</option>
-          <option value="BABY">幼体</option>
-          <option value="ADULT">成体</option>
-        </select>
+            <select v-model="filterStatus" class="input">
+              <option value="">全部状态</option>
+              <option value="BABY">幼体</option>
+              <option value="ADULT">成体</option>
+            </select>
+          </div>
 
-        <input
-          v-model="searchQuery"
-          type="text"
-          placeholder="搜索宠物名称..."
-          class="px-3 py-2 border rounded-lg flex-1 max-w-xs"
-        />
+          <div class="flex-1">
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="搜索宠物名称..."
+              class="input w-full"
+            />
+          </div>
+        </div>
       </div>
 
       <!-- 宠物网格 -->
@@ -110,6 +118,12 @@
                 class="flex-1 bg-purple-500 text-white py-2 px-3 rounded text-sm hover:bg-purple-600 transition-colors"
               >
                 分享
+              </button>
+              <button
+                @click="openGiftModal(userPet)"
+                class="flex-1 bg-pink-500 text-white py-2 px-3 rounded text-sm hover:bg-pink-600 transition-colors"
+              >
+                赠送
               </button>
             </div>
           </div>
@@ -319,6 +333,13 @@ const sharePet = (userPet: any) => {
   // 跳转到宠物广场分享页面
   console.log('分享宠物:', userPet.id)
   // 这里应该实现分享功能
+}
+
+const openGiftModal = (userPet: any) => {
+  // 跳转到好友页面的赠送功能
+  console.log('赠送宠物:', userPet.id)
+  // 这里可以打开赠送模态框或跳转到好友页面
+  window.location.href = '/friends'
 }
 
 // 生命周期

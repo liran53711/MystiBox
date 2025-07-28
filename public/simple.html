@@ -23,7 +23,11 @@
             <div class="container mx-auto flex justify-between items-center">
                 <h1 class="text-2xl font-bold text-white">🎁 MystiBox</h1>
                 <div class="space-x-4">
-                    <button onclick="showLogin()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">登录</button>
+                    <button onclick="showHome()" class="text-white hover:text-yellow-300">首页</button>
+                    <button onclick="showStore()" class="text-white hover:text-yellow-300">商店</button>
+                    <button onclick="showMyPets()" class="text-white hover:text-yellow-300">我的宠物</button>
+                    <button onclick="showPlaza()" class="text-white hover:text-yellow-300">宠物广场</button>
+                    <button onclick="showLogin()" id="loginBtn" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">登录</button>
                     <span id="userInfo" class="text-white hidden"></span>
                 </div>
             </div>
@@ -63,7 +67,7 @@
                         <div class="glass-card p-6">
                             <h1 id="seriesName" class="text-3xl font-bold text-white mb-4"></h1>
                             <p id="seriesDescription" class="text-white mb-6"></p>
-                            
+
                             <div class="mb-6">
                                 <div class="flex justify-between mb-2">
                                     <span class="text-white">价格:</span>
@@ -74,12 +78,45 @@
                                     <span id="userPoints" class="font-bold text-green-300">1000</span>
                                 </div>
                             </div>
-                            
+
                             <button id="drawButton" onclick="drawPet()" class="w-full bg-red-500 text-white py-3 px-6 rounded-lg text-lg font-semibold hover:bg-red-600 transform hover:scale-105 transition-all">
                                 🎲 抽取盲盒
                             </button>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- 我的宠物 -->
+            <div id="myPets" class="hidden">
+                <div class="flex justify-between items-center mb-8">
+                    <h2 class="text-3xl font-bold text-white">我的宠物收藏</h2>
+                    <div class="text-white">共 <span id="petCount">0</span> 只宠物</div>
+                </div>
+
+                <div id="petsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    <!-- 宠物卡片将通过JavaScript动态生成 -->
+                </div>
+
+                <div id="noPets" class="text-center py-16 hidden">
+                    <div class="text-6xl mb-4">🎁</div>
+                    <h3 class="text-xl font-semibold text-white mb-2">还没有宠物</h3>
+                    <p class="text-white mb-4">去商店抽取你的第一只宠物吧！</p>
+                    <button onclick="showStore()" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors">
+                        前往商店
+                    </button>
+                </div>
+            </div>
+
+            <!-- 宠物广场 -->
+            <div id="plaza" class="hidden">
+                <div class="flex justify-between items-center mb-8">
+                    <h2 class="text-3xl font-bold text-white">宠物广场</h2>
+                    <input type="text" id="plazaSearch" placeholder="搜索宠物或用户..." class="px-4 py-2 border rounded-lg w-64" />
+                </div>
+
+                <div id="plazaPosts" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- 帖子将通过JavaScript动态生成 -->
                 </div>
             </div>
         </div>
@@ -122,6 +159,8 @@
         // 全局状态
         let currentUser = null;
         let currentSeries = null;
+        let userPets = [];
+        let plazaPosts = [];
         
         // 模拟数据
         const mockSeries = [
@@ -167,6 +206,19 @@
         ];
 
         // 显示/隐藏功能
+        function hideAllPages() {
+            document.getElementById('store').classList.add('hidden');
+            document.getElementById('seriesDetail').classList.add('hidden');
+            document.getElementById('myPets').classList.add('hidden');
+            document.getElementById('plaza').classList.add('hidden');
+            // 显示首页内容
+            document.querySelector('.text-center.py-16').style.display = 'block';
+        }
+
+        function showHome() {
+            hideAllPages();
+        }
+
         function showLogin() {
             document.getElementById('loginModal').classList.remove('hidden');
         }
@@ -176,23 +228,39 @@
         }
 
         function showStore() {
+            hideAllPages();
+            document.querySelector('.text-center.py-16').style.display = 'none';
             document.getElementById('store').classList.remove('hidden');
-            document.getElementById('seriesDetail').classList.add('hidden');
             renderSeries();
+        }
+
+        function showMyPets() {
+            hideAllPages();
+            document.querySelector('.text-center.py-16').style.display = 'none';
+            document.getElementById('myPets').classList.remove('hidden');
+            renderMyPets();
+        }
+
+        function showPlaza() {
+            hideAllPages();
+            document.querySelector('.text-center.py-16').style.display = 'none';
+            document.getElementById('plaza').classList.remove('hidden');
+            renderPlaza();
         }
 
         function showSeriesDetail(seriesId) {
             currentSeries = mockSeries.find(s => s.id === seriesId);
             if (!currentSeries) return;
 
-            document.getElementById('store').classList.add('hidden');
+            hideAllPages();
+            document.querySelector('.text-center.py-16').style.display = 'none';
             document.getElementById('seriesDetail').classList.remove('hidden');
-            
+
             document.getElementById('seriesImage').src = currentSeries.image;
             document.getElementById('seriesName').textContent = currentSeries.name;
             document.getElementById('seriesDescription').textContent = currentSeries.description;
             document.getElementById('seriesPrice').textContent = currentSeries.price + ' 积分';
-            
+
             updateDrawButton();
         }
 
@@ -214,7 +282,7 @@
                 
                 document.getElementById('userInfo').textContent = `${username} (${currentUser.points}积分)`;
                 document.getElementById('userInfo').classList.remove('hidden');
-                document.querySelector('button[onclick="showLogin()"]').classList.add('hidden');
+                document.getElementById('loginBtn').classList.add('hidden');
                 
                 hideLogin();
                 updateDrawButton();
@@ -293,18 +361,31 @@
             // 扣除积分
             currentUser.points -= currentSeries.price;
 
+            // 添加到用户宠物收藏
+            const userPet = {
+                id: Date.now().toString(),
+                pet: pet,
+                nickname: null,
+                obtainedAt: new Date().toISOString(),
+                level: 1,
+                exp: 0
+            };
+            userPets.push(userPet);
+
             // 显示结果
-            document.getElementById('resultImage').src = pet.image;
+            document.getElementById('resultImage').src = pet.babyImageUrl;
             document.getElementById('resultName').textContent = pet.name;
-            document.getElementById('resultDescription').textContent = pet.description;
+            document.getElementById('resultDescription').textContent = pet.story;
             document.getElementById('remainingPoints').textContent = currentUser.points;
-            
-            // 显示星级
+
+            // 显示星级 (基于稀有度枚举)
             const rarityContainer = document.getElementById('resultRarity');
             rarityContainer.innerHTML = '';
+            const rarityLevels = { 'N': 1, 'R': 2, 'SR': 3, 'SSR': 4, 'UR': 5 };
+            const level = rarityLevels[pet.rarity] || 1;
             for (let i = 1; i <= 5; i++) {
                 const star = document.createElement('div');
-                star.className = `w-4 h-4 rounded-full ${i <= pet.rarity ? 'bg-yellow-400' : 'bg-gray-400'}`;
+                star.className = `w-4 h-4 rounded-full ${i <= level ? 'bg-yellow-400' : 'bg-gray-400'}`;
                 rarityContainer.appendChild(star);
             }
 
@@ -312,8 +393,149 @@
             updateDrawButton();
         }
 
+        // 渲染我的宠物
+        function renderMyPets() {
+            const container = document.getElementById('petsList');
+            const noPetsDiv = document.getElementById('noPets');
+            const petCountSpan = document.getElementById('petCount');
+
+            petCountSpan.textContent = userPets.length;
+
+            if (userPets.length === 0) {
+                container.style.display = 'none';
+                noPetsDiv.classList.remove('hidden');
+                return;
+            }
+
+            container.style.display = 'grid';
+            noPetsDiv.classList.add('hidden');
+
+            container.innerHTML = userPets.map(userPet => `
+                <div class="glass-card p-4">
+                    <div class="aspect-square rounded-lg overflow-hidden mb-4">
+                        <img src="${userPet.pet.image}" alt="${userPet.pet.name}" class="w-full h-full object-cover">
+                    </div>
+                    <h3 class="text-white font-bold mb-2">${userPet.nickname || userPet.pet.name}</h3>
+                    <p class="text-white text-sm mb-3">${userPet.pet.description}</p>
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs px-2 py-1 rounded ${getRarityBgColor(userPet.pet.rarity)}">${getRarityText(userPet.pet.rarity)}</span>
+                        <span class="text-white text-sm">获得于 ${formatDate(userPet.obtainedAt)}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 渲染宠物广场
+        function renderPlaza() {
+            const container = document.getElementById('plazaPosts');
+
+            container.innerHTML = plazaPosts.map(post => `
+                <div class="glass-card p-6">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+                            <span class="text-white font-semibold">${post.username[0].toUpperCase()}</span>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-white">${post.username}</h3>
+                            <p class="text-sm text-gray-300">${post.time}</p>
+                        </div>
+                    </div>
+
+                    <div class="aspect-square rounded-lg overflow-hidden mb-4">
+                        <img src="${post.petImage}" alt="${post.petName}" class="w-full h-full object-cover">
+                    </div>
+
+                    <h4 class="font-semibold text-white mb-2">${post.petName}</h4>
+                    <p class="text-gray-300 text-sm mb-4">${post.description}</p>
+
+                    <div class="flex justify-between items-center">
+                        <div class="flex space-x-4">
+                            <button class="flex items-center space-x-1 text-gray-300 hover:text-red-400">
+                                <span>❤️</span>
+                                <span class="text-sm">${post.likes}</span>
+                            </button>
+                            <button class="flex items-center space-x-1 text-gray-300 hover:text-blue-400">
+                                <span>💬</span>
+                                <span class="text-sm">${post.comments}</span>
+                            </button>
+                        </div>
+                        <span class="text-xs px-2 py-1 rounded ${getRarityBgColor(post.rarity)}">${getRarityText(post.rarity)}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 辅助函数
+        function getRarityBgColor(rarity) {
+            const colors = {
+                'N': 'bg-gray-500 text-white',
+                'R': 'bg-blue-500 text-white',
+                'SR': 'bg-purple-500 text-white',
+                'SSR': 'bg-yellow-500 text-white',
+                'UR': 'bg-red-500 text-white'
+            };
+            return colors[rarity] || colors['N'];
+        }
+
+        function getRarityText(rarity) {
+            const texts = {
+                'N': '普通',
+                'R': '稀有',
+                'SR': '史诗',
+                'SSR': '传说',
+                'UR': '神话'
+            };
+            return texts[rarity] || '普通';
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString();
+        }
+
+        // 初始化数据
+        function initializeMockData() {
+            // 初始化广场帖子
+            plazaPosts = [
+                {
+                    id: 1,
+                    username: '宠物爱好者',
+                    time: '2小时前',
+                    petName: '闪光小精灵',
+                    petImage: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=300&fit=crop',
+                    description: '今天抽到了我的第一只森林精灵，太开心了！',
+                    likes: 24,
+                    comments: 8,
+                    rarity: 'N'
+                },
+                {
+                    id: 2,
+                    username: '星空收藏家',
+                    time: '5小时前',
+                    petName: '星辰守护者',
+                    petImage: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=300&h=300&fit=crop',
+                    description: '我的星星宝宝终于进化了！看看这华丽的形态！',
+                    likes: 56,
+                    comments: 15,
+                    rarity: 'SR'
+                },
+                {
+                    id: 3,
+                    username: '新手玩家',
+                    time: '1天前',
+                    petName: '森林守护者',
+                    petImage: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=300&fit=crop',
+                    description: '新手第一抽就是稀有度！运气太好了！',
+                    likes: 12,
+                    comments: 3,
+                    rarity: 'R'
+                }
+            ];
+        }
+
         // 初始化
         document.addEventListener('DOMContentLoaded', function() {
+            initializeMockData();
             renderSeries();
         });
     </script>

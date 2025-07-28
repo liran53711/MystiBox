@@ -17,10 +17,10 @@ const mockSeries = [
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     pets: [
-      { id: '1', name: '小精灵', rarity: 1, description: '来自森林的小精灵', image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=300&fit=crop' },
-      { id: '2', name: '森林守护者', rarity: 2, description: '守护森林的精灵', image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=300&fit=crop' },
-      { id: '3', name: '古树之灵', rarity: 3, description: '千年古树的灵魂', image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=300&fit=crop' },
-      { id: '4', name: '森林女王', rarity: 4, description: '森林的统治者', image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=300&fit=crop' }
+      { id: '1', name: '小精灵', rarity: 'N', story: '来自森林的小精灵', babyImageUrl: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=300&fit=crop', adultImageUrl: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=400&fit=crop' },
+      { id: '2', name: '森林守护者', rarity: 'R', story: '守护森林的精灵', babyImageUrl: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=300&fit=crop', adultImageUrl: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=400&fit=crop' },
+      { id: '3', name: '古树之灵', rarity: 'SR', story: '千年古树的灵魂', babyImageUrl: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=300&fit=crop', adultImageUrl: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=400&fit=crop' },
+      { id: '4', name: '森林女王', rarity: 'SSR', story: '森林的统治者', babyImageUrl: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=300&fit=crop', adultImageUrl: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=400&fit=crop' }
     ]
   },
   {
@@ -33,10 +33,10 @@ const mockSeries = [
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     pets: [
-      { id: '5', name: '小海星', rarity: 1, description: '可爱的小海星', image: 'https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=300&h=300&fit=crop' },
-      { id: '6', name: '珊瑚精灵', rarity: 2, description: '珊瑚礁的守护者', image: 'https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=300&h=300&fit=crop' },
-      { id: '7', name: '深海巨兽', rarity: 3, description: '深海的神秘生物', image: 'https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=300&h=300&fit=crop' },
-      { id: '8', name: '海洋之王', rarity: 4, description: '统治海洋的王者', image: 'https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=300&h=300&fit=crop' }
+      { id: '5', name: '小海星', rarity: 'N', story: '可爱的小海星', babyImageUrl: 'https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=300&h=300&fit=crop', adultImageUrl: 'https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=400&h=400&fit=crop' },
+      { id: '6', name: '珊瑚精灵', rarity: 'R', story: '珊瑚礁的守护者', babyImageUrl: 'https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=300&h=300&fit=crop', adultImageUrl: 'https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=400&h=400&fit=crop' },
+      { id: '7', name: '深海巨兽', rarity: 'SR', story: '深海的神秘生物', babyImageUrl: 'https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=300&h=300&fit=crop', adultImageUrl: 'https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=400&h=400&fit=crop' },
+      { id: '8', name: '海洋之王', rarity: 'SSR', story: '统治海洋的王者', babyImageUrl: 'https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=300&h=300&fit=crop', adultImageUrl: 'https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=400&h=400&fit=crop' }
     ]
   },
   {
@@ -49,10 +49,10 @@ const mockSeries = [
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     pets: [
-      { id: '9', name: '小星星', rarity: 1, description: '闪闪发光的小星星', image: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=300&h=300&fit=crop' },
-      { id: '10', name: '月亮精灵', rarity: 2, description: '月光下的精灵', image: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=300&h=300&fit=crop' },
-      { id: '11', name: '星座守护者', rarity: 3, description: '守护星座的使者', image: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=300&h=300&fit=crop' },
-      { id: '12', name: '宇宙之神', rarity: 5, description: '创造宇宙的神明', image: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=300&h=300&fit=crop' }
+      { id: '9', name: '小星星', rarity: 'N', story: '闪闪发光的小星星', babyImageUrl: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=300&h=300&fit=crop', adultImageUrl: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=400&h=400&fit=crop' },
+      { id: '10', name: '月亮精灵', rarity: 'R', story: '月光下的精灵', babyImageUrl: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=300&h=300&fit=crop', adultImageUrl: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=400&h=400&fit=crop' },
+      { id: '11', name: '星座守护者', rarity: 'SR', story: '守护星座的使者', babyImageUrl: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=300&h=300&fit=crop', adultImageUrl: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=400&h=400&fit=crop' },
+      { id: '12', name: '宇宙之神', rarity: 'UR', story: '创造宇宙的神明', babyImageUrl: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=300&h=300&fit=crop', adultImageUrl: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=400&h=400&fit=crop' }
     ]
   }
 ]
@@ -171,22 +171,22 @@ const mockApiClient = {
       }
 
       // 模拟抽取逻辑 - 基于稀有度权重
-      const rarityWeights = { 1: 50, 2: 30, 3: 15, 4: 4, 5: 1 }
+      const rarityWeights = { 'N': 50, 'R': 30, 'SR': 15, 'SSR': 4, 'UR': 1 }
       const random = Math.random() * 100
-      let targetRarity = 1
+      let targetRarity = 'N'
       let cumulative = 0
 
       for (const [rarity, weight] of Object.entries(rarityWeights)) {
         cumulative += weight
         if (random <= cumulative) {
-          targetRarity = parseInt(rarity)
+          targetRarity = rarity
           break
         }
       }
 
       // 从该稀有度中随机选择宠物
       const availablePets = series.pets.filter(p => p.rarity === targetRarity)
-      const finalPets = availablePets.length > 0 ? availablePets : series.pets.filter(p => p.rarity === 1)
+      const finalPets = availablePets.length > 0 ? availablePets : series.pets.filter(p => p.rarity === 'N')
       const pet = finalPets[Math.floor(Math.random() * finalPets.length)]
 
       // 扣除积分
