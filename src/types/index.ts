@@ -27,6 +27,8 @@ export interface Pet {
   description?: string
   rarity: number // 1-5 稀有度等级
   image: string
+  babyImage?: string // 幼体图片
+  adultImage?: string // 成体图片
   story?: string
   seriesId: number
   series?: Series
@@ -48,6 +50,11 @@ export interface UserPet {
   isAdult: boolean
   nickname?: string
   obtainedAt: string
+  // 宠物成长相关属性
+  status?: 'BABY' | 'ADULT'
+  growthValue?: number
+  maxGrowth?: number
+  lastInteractedAt?: string | null
   user?: User
   pet?: Pet
 }

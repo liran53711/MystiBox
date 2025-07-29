@@ -59,7 +59,7 @@ const mockSeries = [
 
 // 真实API客户端
 const realApiClient = axios.create({
-  baseURL: 'http://localhost:3001/api',
+  baseURL: 'http://localhost:3003/api',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -206,3 +206,4 @@ const mockApiClient = {
 
 // 导出API客户端
 export const api = USE_MOCK_API ? mockApiClient : realApiClient
+export const apiClient = api // 为了兼容性，同时导出 apiClient

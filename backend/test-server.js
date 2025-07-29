@@ -1,20 +1,22 @@
 const express = require('express');
 const cors = require('cors');
-require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 3003;
+const PORT = 3003;
+
+console.log('Starting test server...');
 
 // 中间件
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: 'http://localhost:3000',
   credentials: true
 }));
 
 app.use(express.json());
 
-// 简单的测试路由
+// 健康检查
 app.get('/health', (req, res) => {
+  console.log('Health check requested');
   res.json({
     status: 'OK',
     message: 'MystiBox API服务运行正常',
@@ -22,43 +24,33 @@ app.get('/health', (req, res) => {
   });
 });
 
-// 测试系列数据
+// 系列数据
 app.get('/api/series', (req, res) => {
+  console.log('Series data requested');
   res.json([
     {
       id: 1,
       name: '森林精灵系列',
-      description: '来自神秘森林的可爱精灵们，每一只都拥有独特的魔法能力',
+      description: '来自神秘森林的可爱精灵们',
       price: 100,
       image: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=400&fit=crop',
-      isActive: true,
-      pets: []
-    },
-    {
-      id: 2,
-      name: '海洋冒险系列',
-      description: '深海中的奇妙生物，带你探索未知的海底世界',
-      price: 120,
-      image: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=400&h=400&fit=crop',
-      isActive: true,
-      pets: []
+      isActive: true
     }
   ]);
 });
 
-// 测试登录
+// 登录
 app.post('/api/auth/login', (req, res) => {
+  console.log('Login requested:', req.body);
   const { username, password } = req.body;
   
-  if (username === 'testuser' && password === 'test123456') {
+  if (username === 'demo' && password === 'demo123') {
     res.json({
       user: {
         id: '1',
-        username: 'testuser',
+        username: 'demo',
         points: 1000,
-        role: 'USER',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        role: 'USER'
       },
       accessToken: 'test-token-' + Date.now()
     });
@@ -69,9 +61,8 @@ app.post('/api/auth/login', (req, res) => {
 
 // 启动服务器
 app.listen(PORT, () => {
-  console.log(`🚀 MystiBox API服务器运行在端口 ${PORT}`);
+  console.log(`🚀 测试服务器运行在端口 ${PORT}`);
   console.log(`📍 健康检查: http://localhost:${PORT}/health`);
-  console.log(`🌍 环境: ${process.env.NODE_ENV || 'development'}`);
 });
 
 module.exports = app;

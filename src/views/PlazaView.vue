@@ -147,7 +147,7 @@
     </div>
 
     <!-- 空状态 -->
-    <div v-if="filteredPosts.length === 0" class="text-center py-16">
+    <div v-if="sortedAndFilteredPosts.length === 0" class="text-center py-16">
       <div class="text-6xl mb-4">🏛️</div>
       <h3 class="text-xl font-semibold mb-2">暂无分享</h3>
       <p class="text-gray-600 mb-4">还没有人分享宠物，快去我的宠物页面分享你的第一只宠物吧！</p>

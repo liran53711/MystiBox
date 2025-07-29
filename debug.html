@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vue Debug Test</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+<body>
+    <div id="app">
+        <h1>{{ message }}</h1>
+        <p>当前时间: {{ currentTime }}</p>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+        
+        createApp({
+            setup() {
+                const message = ref('Vue 3 正在工作！');
+                const currentTime = ref('');
+                
+                onMounted(() => {
+                    currentTime.value = new Date().toLocaleString();
+                    console.log('Vue app mounted successfully!');
+                });
+                
+                return {
+                    message,
+                    currentTime
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

@@ -51,14 +51,14 @@
           <!-- 宠物图片 -->
           <div class="aspect-square relative">
             <img
-              :src="userPet.status === 'ADULT' ? userPet.pet.adultImage : userPet.pet.babyImage"
-              :alt="userPet.nickname || userPet.pet.name"
+              :src="userPet.status === 'ADULT' ? (userPet.pet?.adultImage || userPet.pet?.image) : (userPet.pet?.babyImage || userPet.pet?.image)"
+              :alt="userPet.nickname || userPet.pet?.name"
               class="w-full h-full object-cover"
             />
             <!-- 稀有度标识 -->
             <div class="absolute top-2 right-2">
-              <span :class="getRarityClass(userPet.pet.rarity)" class="px-2 py-1 rounded text-xs font-bold text-white">
-                {{ userPet.pet.rarity }}
+              <span :class="getRarityClass(userPet.pet?.rarity || 1)" class="px-2 py-1 rounded text-xs font-bold text-white">
+                {{ getRarityText(userPet.pet?.rarity || 1) }}
               </span>
             </div>
             <!-- 状态标识 -->
@@ -72,20 +72,20 @@
           <!-- 宠物信息 -->
           <div class="p-4">
             <h3 class="font-bold text-lg mb-2">
-              {{ userPet.nickname || userPet.pet.name }}
+              {{ userPet.nickname || userPet.pet?.name }}
             </h3>
-            <p class="text-gray-600 text-sm mb-3">{{ userPet.pet.story }}</p>
+            <p class="text-gray-600 text-sm mb-3">{{ userPet.pet?.story }}</p>
 
             <!-- 成长进度 -->
             <div class="mb-3">
               <div class="flex justify-between text-sm mb-1">
                 <span>成长进度</span>
-                <span>{{ userPet.growthValue }}/{{ userPet.maxGrowth }}</span>
+                <span>{{ userPet.growthValue || 0 }}/{{ userPet.maxGrowth || 100 }}</span>
               </div>
               <div class="w-full bg-gray-200 rounded-full h-2">
                 <div
                   class="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                  :style="{ width: (userPet.growthValue / userPet.maxGrowth * 100) + '%' }"
+                  :style="{ width: ((userPet.growthValue || 0) / (userPet.maxGrowth || 100) * 100) + '%' }"
                 ></div>
               </div>
             </div>
@@ -99,7 +99,7 @@
                 {{ userPet.nickname ? '改名' : '起名' }}
               </button>
               <button
-                v-if="userPet.status === 'BABY' && userPet.growthValue >= userPet.maxGrowth"
+                v-if="userPet.status === 'BABY' && (userPet.growthValue || 0) >= (userPet.maxGrowth || 100)"
                 @click="evolvePet(userPet)"
                 class="flex-1 bg-green-500 text-white py-2 px-3 rounded text-sm hover:bg-green-600 transition-colors"
               >
@@ -156,7 +156,7 @@
         <input
           v-model="newNickname"
           type="text"
-          :placeholder="selectedPet?.pet.name"
+          :placeholder="selectedPet?.pet?.name"
           class="w-full px-3 py-2 border rounded-lg mb-4"
           maxlength="20"
         />
@@ -183,24 +183,29 @@
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/store/auth'
 import { useUiStore } from '@/store/ui'
+import type { UserPet } from '@/types'
 
 const authStore = useAuthStore()
 const uiStore = useUiStore()
 
 // 响应式数据
-const userPets = ref([])
+const userPets = ref<UserPet[]>([])
 const filterRarity = ref('')
 const filterStatus = ref('')
 const searchQuery = ref('')
 const showNicknameModal = ref(false)
-const selectedPet = ref(null)
+const selectedPet = ref<UserPet | null>(null)
 const newNickname = ref('')
 
 // 模拟数据（实际应该从API获取）
-const mockUserPets = [
+const mockUserPets: UserPet[] = [
   {
     id: '1',
+    userId: 'user1',
+    petId: '1',
+    isAdult: false,
     nickname: '小绿',
+    obtainedAt: '2024-01-01T00:00:00Z',
     growthValue: 80,
     maxGrowth: 100,
     status: 'BABY',
@@ -208,15 +213,24 @@ const mockUserPets = [
     pet: {
       id: '1',
       name: '小精灵',
-      rarity: 'N',
-      story: '来自森林的小精灵',
+      description: '来自森林的小精灵',
+      rarity: 1, // N级稀有度
+      image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=300&fit=crop',
       babyImage: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=300&fit=crop',
-      adultImage: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=400&fit=crop'
+      adultImage: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=400&fit=crop',
+      story: '来自森林的小精灵',
+      seriesId: 1,
+      createdAt: '2024-01-01T00:00:00Z',
+      updatedAt: '2024-01-01T00:00:00Z'
     }
   },
   {
     id: '2',
-    nickname: null,
+    userId: 'user1',
+    petId: '2',
+    isAdult: true,
+    nickname: undefined,
+    obtainedAt: '2024-01-02T00:00:00Z',
     growthValue: 100,
     maxGrowth: 100,
     status: 'ADULT',
@@ -224,15 +238,24 @@ const mockUserPets = [
     pet: {
       id: '2',
       name: '森林守护者',
-      rarity: 'R',
-      story: '守护森林的精灵',
+      description: '守护森林的精灵',
+      rarity: 2, // R级稀有度
+      image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=400&fit=crop',
       babyImage: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=300&fit=crop',
-      adultImage: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=400&fit=crop'
+      adultImage: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=400&fit=crop',
+      story: '守护森林的精灵',
+      seriesId: 1,
+      createdAt: '2024-01-01T00:00:00Z',
+      updatedAt: '2024-01-01T00:00:00Z'
     }
   },
   {
     id: '3',
+    userId: 'user1',
+    petId: '3',
+    isAdult: false,
     nickname: '星辰',
+    obtainedAt: '2024-01-03T00:00:00Z',
     growthValue: 50,
     maxGrowth: 100,
     status: 'BABY',
@@ -240,10 +263,15 @@ const mockUserPets = [
     pet: {
       id: '3',
       name: '小星星',
-      rarity: 'SR',
-      story: '闪闪发光的小星星',
+      description: '闪闪发光的小星星',
+      rarity: 3, // SR级稀有度
+      image: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=300&h=300&fit=crop',
       babyImage: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=300&h=300&fit=crop',
-      adultImage: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=400&h=400&fit=crop'
+      adultImage: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=400&h=400&fit=crop',
+      story: '闪闪发光的小星星',
+      seriesId: 1,
+      createdAt: '2024-01-01T00:00:00Z',
+      updatedAt: '2024-01-01T00:00:00Z'
     }
   }
 ]
@@ -253,7 +281,9 @@ const filteredPets = computed(() => {
   let filtered = userPets.value
 
   if (filterRarity.value) {
-    filtered = filtered.filter(pet => pet.pet.rarity === filterRarity.value)
+    const rarityMap: { [key: string]: number } = { 'N': 1, 'R': 2, 'SR': 3, 'SSR': 4, 'UR': 5 }
+    const rarityValue = rarityMap[filterRarity.value]
+    filtered = filtered.filter(pet => pet.pet?.rarity === rarityValue)
   }
 
   if (filterStatus.value) {
@@ -263,8 +293,8 @@ const filteredPets = computed(() => {
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
     filtered = filtered.filter(pet =>
-      (pet.nickname || pet.pet.name).toLowerCase().includes(query) ||
-      pet.pet.name.toLowerCase().includes(query)
+      (pet.nickname || pet.pet?.name || '').toLowerCase().includes(query) ||
+      (pet.pet?.name || '').toLowerCase().includes(query)
     )
   }
 
@@ -272,15 +302,26 @@ const filteredPets = computed(() => {
 })
 
 // 方法
-const getRarityClass = (rarity: string) => {
+const getRarityClass = (rarity: number) => {
   const classes = {
-    'N': 'bg-gray-500',
-    'R': 'bg-blue-500',
-    'SR': 'bg-purple-500',
-    'SSR': 'bg-yellow-500',
-    'UR': 'bg-red-500'
+    1: 'bg-gray-500',    // N
+    2: 'bg-blue-500',    // R
+    3: 'bg-purple-500',  // SR
+    4: 'bg-yellow-500',  // SSR
+    5: 'bg-red-500'      // UR
   }
-  return classes[rarity as keyof typeof classes] || classes['N']
+  return classes[rarity as keyof typeof classes] || classes[1]
+}
+
+const getRarityText = (rarity: number) => {
+  const texts = {
+    1: 'N',
+    2: 'R',
+    3: 'SR',
+    4: 'SSR',
+    5: 'UR'
+  }
+  return texts[rarity as keyof typeof texts] || 'N'
 }
 
 const canFeedToday = (userPet: any) => {
@@ -304,7 +345,7 @@ const closeNicknameModal = () => {
 
 const saveNickname = () => {
   if (selectedPet.value) {
-    selectedPet.value.nickname = newNickname.value.trim() || null
+    selectedPet.value.nickname = newNickname.value.trim() || undefined
     // 这里应该调用API保存昵称
     console.log('保存昵称:', selectedPet.value.id, newNickname.value)
   }

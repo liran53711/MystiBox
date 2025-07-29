@@ -1,27 +1,42 @@
 <template>
-  <div id="app" class="min-h-screen" style="background-color: var(--color-bg-primary);">
+  <div id="app">
+    <!-- 导航栏 -->
     <Navbar />
-    <main class="container mx-auto px-4 py-8">
+
+    <!-- 主要内容区域 -->
+    <main>
       <RouterView />
     </main>
-    <Footer />
 
-    <!-- 登录模态框 -->
-    <LoginModal />
+    <!-- 抽卡动画覆盖层 -->
+    <DrawAnimation
+      :show="uiStore.isGachaPlaying"
+      :result="uiStore.gachaResult"
+      @close="uiStore.endGacha"
+      @continue="handleContinueDraw"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useAuthStore } from '@/store/auth'
+import { useUiStore } from '@/store/ui'
 import Navbar from '@/components/layout/Navbar.vue'
-import Footer from '@/components/layout/Footer.vue'
-import LoginModal from '@/components/auth/LoginModal.vue'
+import DrawAnimation from '@/components/draw/DrawAnimation.vue'
 
 const authStore = useAuthStore()
+const uiStore = useUiStore()
 
+// 初始化应用
 onMounted(() => {
-  // 应用启动时检查用户登录状态
+  // 尝试从本地存储恢复用户登录状态
   authStore.checkAuth()
+  console.log('MystiBox app initialized')
 })
+
+const handleContinueDraw = () => {
+  // 继续抽取的逻辑
+  uiStore.endGacha()
+}
 </script>
