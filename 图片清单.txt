@@ -1,0 +1,116 @@
+MystiBox 项目图片需求清单
+================================
+
+总计需要：45张图片
+- 5张系列封面图 (400x400px)
+- 40张宠物图片 (20只宠物 × 2张/只)
+
+文件夹结构：
+public/images/
+├── series/          # 系列封面图
+└── pets/           # 宠物图片
+    ├── forest/     # 森林精灵系列
+    ├── ocean/      # 海洋冒险系列
+    ├── star/       # 星空守护系列
+    ├── dragon/     # 龙族传说系列
+    └── magic/      # 魔法学院系列
+
+================================
+系列封面图 (400x400px, JPG格式)
+================================
+
+public/images/series/forest.jpg      # 森林精灵系列封面
+public/images/series/ocean.jpg       # 海洋冒险系列封面  
+public/images/series/star.jpg        # 星空守护系列封面
+public/images/series/dragon.jpg      # 龙族传说系列封面
+public/images/series/magic.jpg       # 魔法学院系列封面
+
+================================
+森林精灵系列宠物图片
+================================
+
+public/images/pets/forest/fairy-baby.jpg          # 小精灵-幼体 (300x300px)
+public/images/pets/forest/fairy-adult.jpg         # 小精灵-成体 (400x400px)
+public/images/pets/forest/guardian-baby.jpg       # 森林守护者-幼体 (300x300px)
+public/images/pets/forest/guardian-adult.jpg      # 森林守护者-成体 (400x400px)
+public/images/pets/forest/tree-spirit-baby.jpg    # 古树之灵-幼体 (300x300px)
+public/images/pets/forest/tree-spirit-adult.jpg   # 古树之灵-成体 (400x400px)
+public/images/pets/forest/forest-queen-baby.jpg   # 森林女王-幼体 (300x300px)
+public/images/pets/forest/forest-queen-adult.jpg  # 森林女王-成体 (400x400px)
+
+================================
+海洋冒险系列宠物图片
+================================
+
+public/images/pets/ocean/starfish-baby.jpg       # 小海星-幼体 (300x300px)
+public/images/pets/ocean/starfish-adult.jpg      # 小海星-成体 (400x400px)
+public/images/pets/ocean/coral-fairy-baby.jpg    # 珊瑚精灵-幼体 (300x300px)
+public/images/pets/ocean/coral-fairy-adult.jpg   # 珊瑚精灵-成体 (400x400px)
+public/images/pets/ocean/sea-beast-baby.jpg      # 深海巨兽-幼体 (300x300px)
+public/images/pets/ocean/sea-beast-adult.jpg     # 深海巨兽-成体 (400x400px)
+public/images/pets/ocean/ocean-king-baby.jpg     # 海洋之王-幼体 (300x300px)
+public/images/pets/ocean/ocean-king-adult.jpg    # 海洋之王-成体 (400x400px)
+
+================================
+星空守护系列宠物图片
+================================
+
+public/images/pets/star/little-star-baby.jpg    # 小星星-幼体 (300x300px)
+public/images/pets/star/little-star-adult.jpg   # 小星星-成体 (400x400px)
+public/images/pets/star/moon-fairy-baby.jpg     # 月亮精灵-幼体 (300x300px)
+public/images/pets/star/moon-fairy-adult.jpg    # 月亮精灵-成体 (400x400px)
+public/images/pets/star/constellation-baby.jpg  # 星座之灵-幼体 (300x300px)
+public/images/pets/star/constellation-adult.jpg # 星座之灵-成体 (400x400px)
+public/images/pets/star/cosmos-god-baby.jpg     # 宇宙之神-幼体 (300x300px)
+public/images/pets/star/cosmos-god-adult.jpg    # 宇宙之神-成体 (400x400px)
+
+================================
+龙族传说系列宠物图片
+================================
+
+public/images/pets/dragon/young-dragon-baby.jpg   # 幼龙-幼体 (300x300px)
+public/images/pets/dragon/young-dragon-adult.jpg  # 幼龙-成体 (400x400px)
+public/images/pets/dragon/fire-dragon-baby.jpg    # 火龙-幼体 (300x300px)
+public/images/pets/dragon/fire-dragon-adult.jpg   # 火龙-成体 (400x400px)
+public/images/pets/dragon/ancient-dragon-baby.jpg # 古龙-幼体 (300x300px)
+public/images/pets/dragon/ancient-dragon-adult.jpg# 古龙-成体 (400x400px)
+public/images/pets/dragon/dragon-king-baby.jpg    # 龙王-幼体 (300x300px)
+public/images/pets/dragon/dragon-king-adult.jpg   # 龙王-成体 (400x400px)
+
+================================
+魔法学院系列宠物图片
+================================
+
+public/images/pets/magic/apprentice-baby.jpg     # 魔法学徒-幼体 (300x300px)
+public/images/pets/magic/apprentice-adult.jpg    # 魔法学徒-成体 (400x400px)
+public/images/pets/magic/magic-cat-baby.jpg      # 魔法猫咪-幼体 (300x300px)
+public/images/pets/magic/magic-cat-adult.jpg     # 魔法猫咪-成体 (400x400px)
+public/images/pets/magic/magic-teacher-baby.jpg  # 魔法导师-幼体 (300x300px)
+public/images/pets/magic/magic-teacher-adult.jpg # 魔法导师-成体 (400x400px)
+public/images/pets/magic/archmage-baby.jpg       # 大魔法师-幼体 (300x300px)
+public/images/pets/magic/archmage-adult.jpg      # 大魔法师-成体 (400x400px)
+
+================================
+图片要求
+================================
+
+尺寸要求：
+- 系列封面：400x400px (正方形)
+- 宠物幼体：300x300px (正方形)  
+- 宠物成体：400x400px (正方形)
+
+格式要求：
+- JPG 或 PNG 格式
+- 文件大小 < 200KB
+
+稀有度视觉建议：
+- N级：简单可爱风格
+- R级：稍微华丽一些
+- SR级：有特效光环
+- SSR级：非常华丽，有魔法特效
+
+推荐素材网站：
+- Freepik: https://www.freepik.com
+- Pixabay: https://pixabay.com
+- Pexels: https://www.pexels.com
+- OpenGameArt: https://opengameart.org
