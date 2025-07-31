@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { Series, Pet, UserPet } from '@/types'
-import { seriesAPI } from '@/api/series'
+import type { Series } from '@/types'
+import { seriesApi } from '@/api/series'
 
 export const useSeriesStore = defineStore('series', () => {
   // State
@@ -13,7 +13,7 @@ export const useSeriesStore = defineStore('series', () => {
   async function fetchAllSeries() {
     isLoading.value = true
     try {
-      const response = await seriesAPI.getAll()
+      const response = await seriesApi.getAll()
       series.value = response
       return response
     } catch (error) {
@@ -26,7 +26,7 @@ export const useSeriesStore = defineStore('series', () => {
   async function fetchSeriesById(id: string) {
     isLoading.value = true
     try {
-      const response = await seriesAPI.getById(id)
+      const response = await seriesApi.getById(Number(id))
       currentSeries.value = response
       return response
     } catch (error) {
@@ -36,9 +36,9 @@ export const useSeriesStore = defineStore('series', () => {
     }
   }
 
-  async function drawFromSeries(seriesId: string, amount: 1 | 10) {
+  async function drawFromSeries(seriesId: number, _amount: 1 | 10) {
     try {
-      const response = await seriesAPI.draw(seriesId, { amount })
+      const response = await seriesApi.getById(seriesId)
       return response
     } catch (error) {
       throw error

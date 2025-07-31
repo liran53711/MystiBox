@@ -167,12 +167,13 @@
       <div class="modal-content p-6 max-w-md w-full mx-4">
         <h3 class="text-lg font-bold mb-4">添加好友</h3>
         <div class="space-y-4">
-          <input 
-            v-model="searchUsername" 
-            type="text" 
-            placeholder="输入用户名搜索..." 
+          <input
+            v-model="searchUsername"
+            type="text"
+            placeholder="输入用户名搜索..."
             class="input w-full"
             @input="searchUsers"
+            @focus="loadAllUsers"
           />
           
           <div v-if="searchResults.length > 0" class="space-y-2 max-h-48 overflow-y-auto">
@@ -182,8 +183,9 @@
               class="flex items-center justify-between p-3 border rounded-lg"
             >
               <div class="flex items-center space-x-3">
-                <div class="w-8 h-8 rounded-full flex items-center justify-center" style="background: var(--color-accent);">
-                  <span class="text-white font-bold text-sm">{{ user.username[0].toUpperCase() }}</span>
+                <div class="w-8 h-8 rounded-full flex items-center justify-center text-lg" style="background: var(--color-accent);">
+                  <span v-if="user.avatar">{{ user.avatar }}</span>
+                  <span v-else class="text-white font-bold text-sm">{{ user.username[0].toUpperCase() }}</span>
                 </div>
                 <span class="font-medium">{{ user.username }}</span>
               </div>
@@ -254,10 +256,10 @@
               :class="selectedGiftSeries?.id === series.id ? 'border-blue-500 bg-blue-50' : ''"
             >
               <div class="flex items-center space-x-3">
-                <img :src="series.image" :alt="series.name" class="w-12 h-12 rounded-lg object-cover" />
+                <img :src="series.coverImageUrl" :alt="series.name" class="w-12 h-12 rounded-lg object-cover" />
                 <div>
                   <h4 class="font-medium">{{ series.name }}</h4>
-                  <p class="text-sm text-gray-600">{{ series.price }} 积分</p>
+                  <p class="text-sm text-gray-600">{{ series.drawPrice }} 积分</p>
                 </div>
               </div>
             </div>
@@ -277,19 +279,22 @@
     </div>
 
     <!-- 聊天窗口 -->
-    <ChatWindow 
-      v-if="showChatWindow" 
-      :friend="chatFriend" 
+    <ChatWindow
+      v-if="showChatWindow && chatFriend"
+      :friend="chatFriend"
       @close="closeChatWindow"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/store/auth'
 import { useUiStore } from '@/store/ui'
 import ChatWindow from '@/components/social/ChatWindow.vue'
+import type { Friend, FriendRequest } from '@/api/social'
+import type { SearchUserResult } from '@/api/users'
+import type { UserPet, Series } from '@/types'
 
 const authStore = useAuthStore()
 const uiStore = useUiStore()
@@ -300,12 +305,12 @@ const showAddFriendModal = ref(false)
 const showGiftModal = ref(false)
 const showChatWindow = ref(false)
 const searchUsername = ref('')
-const searchResults = ref([])
-const selectedFriend = ref(null)
-const chatFriend = ref(null)
-const giftType = ref('pet')
-const selectedGiftPet = ref(null)
-const selectedGiftSeries = ref(null)
+const searchResults = ref<SearchUserResult[]>([])
+const selectedFriend = ref<Friend | null>(null)
+const chatFriend = ref<Friend | null>(null)
+const giftType = ref<'pet' | 'box'>('pet')
+const selectedGiftPet = ref<UserPet | null>(null)
+const selectedGiftSeries = ref<Series | null>(null)
 const giftMessage = ref('')
 
 const tabs = [
@@ -314,46 +319,68 @@ const tabs = [
   { id: 'chats', name: '聊天记录' }
 ]
 
-// 模拟数据
-const friends = ref([
-  { id: '1', username: 'player1', isOnline: true },
-  { id: '2', username: 'collector', isOnline: false },
-  { id: '3', username: 'petlover', isOnline: true }
-])
-
-const friendRequests = ref([
-  { 
-    id: '1', 
-    sender: { id: '4', username: 'newplayer' }, 
-    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() 
-  }
-])
+// 响应式数据
+const friends = ref<Friend[]>([])
+const friendRequests = ref<FriendRequest[]>([])
+const loading = ref(true)
 
 const recentChats = ref([
   {
     friendId: '1',
-    friend: { id: '1', username: 'player1' },
+    friend: { id: '1', username: 'player1', isOnline: true },
     lastMessage: '你的新宠物好可爱！',
     lastMessageTime: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
     unreadCount: 2
   }
 ])
 
-const giftablePets = ref([
+const giftablePets = ref<UserPet[]>([
   {
     id: '1',
+    userId: 'current-user',
+    petId: '1',
+    isAdult: false,
     nickname: '小可爱',
+    createdAt: new Date().toISOString(),
+    status: 'BABY' as const,
+    growthValue: 50,
+    maxGrowth: 100,
     pet: {
       id: '1',
       name: '小精灵',
-      rarity: 'N',
-      babyImageUrl: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=300&fit=crop'
+      description: '可爱的小精灵',
+      rarity: 'N' as const,
+      babyImageUrl: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=300&fit=crop',
+      adultImageUrl: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=300&fit=crop',
+      story: '森林中的小精灵',
+      seriesId: 1,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      series: {
+        id: 1,
+        name: '森林精灵系列',
+        description: '来自神秘森林的精灵们',
+        coverImageUrl: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=100&h=100&fit=crop',
+        drawPrice: 100,
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
     }
   }
 ])
 
-const availableSeries = ref([
-  { id: 1, name: '森林精灵系列', price: 100, image: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=100&h=100&fit=crop' }
+const availableSeries = ref<Series[]>([
+  {
+    id: 1,
+    name: '森林精灵系列',
+    description: '来自神秘森林的精灵们',
+    coverImageUrl: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=100&h=100&fit=crop',
+    drawPrice: 100,
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  }
 ])
 
 // 方法
@@ -383,49 +410,88 @@ const formatTime = (dateString: string) => {
   }
 }
 
-const searchUsers = () => {
+const loadAllUsers = async () => {
+  if (searchResults.value.length === 0) {
+    try {
+      const { usersApi } = await import('@/api/users')
+      const results = await usersApi.searchUsers('')
+      searchResults.value = results
+    } catch (error) {
+      console.error('加载用户列表失败:', error)
+    }
+  }
+}
+
+const searchUsers = async () => {
   if (!searchUsername.value.trim()) {
-    searchResults.value = []
+    await loadAllUsers()
     return
   }
-  
-  // 模拟搜索结果
-  searchResults.value = [
-    { id: '5', username: 'testuser', isFriend: false, requestSent: false },
-    { id: '6', username: 'gamer123', isFriend: false, requestSent: false }
-  ].filter(user => user.username.includes(searchUsername.value.toLowerCase()))
-}
 
-const sendFriendRequest = (user: any) => {
-  user.requestSent = true
-  console.log('发送好友请求给:', user.username)
-}
-
-const acceptFriendRequest = (request: any) => {
-  friends.value.push({
-    id: request.sender.id,
-    username: request.sender.username,
-    isOnline: Math.random() > 0.5
-  })
-  
-  const index = friendRequests.value.findIndex(r => r.id === request.id)
-  if (index > -1) {
-    friendRequests.value.splice(index, 1)
+  try {
+    const { usersApi } = await import('@/api/users')
+    const results = await usersApi.searchUsers(searchUsername.value.trim())
+    searchResults.value = results
+  } catch (error) {
+    console.error('搜索用户失败:', error)
+    searchResults.value = []
   }
-  
-  console.log('接受好友请求:', request.sender.username)
 }
 
-const rejectFriendRequest = (request: any) => {
-  const index = friendRequests.value.findIndex(r => r.id === request.id)
-  if (index > -1) {
-    friendRequests.value.splice(index, 1)
+const sendFriendRequest = async (user: SearchUserResult) => {
+  try {
+    const { socialAPI } = await import('@/api/social')
+    await socialAPI.sendFriendRequest(user.id)
+    user.requestSent = true
+    alert(`已向 ${user.username} 发送好友请求！`)
+  } catch (error: any) {
+    console.error('发送好友请求失败:', error)
+    alert(error.response?.data?.message || '发送好友请求失败')
   }
-  
-  console.log('拒绝好友请求:', request.sender.username)
 }
 
-const removeFriend = (friend: any) => {
+const acceptFriendRequest = async (request: FriendRequest) => {
+  try {
+    const { socialAPI } = await import('@/api/social')
+    await socialAPI.acceptFriendRequest(request.id)
+
+    friends.value.push({
+      id: request.sender.id,
+      username: request.sender.username,
+      isOnline: Math.random() > 0.5,
+      avatar: request.sender.avatar
+    })
+
+    const index = friendRequests.value.findIndex(r => r.id === request.id)
+    if (index > -1) {
+      friendRequests.value.splice(index, 1)
+    }
+
+    alert(`已接受 ${request.sender.username} 的好友请求！`)
+  } catch (error: any) {
+    console.error('接受好友请求失败:', error)
+    alert(error.response?.data?.message || '接受好友请求失败')
+  }
+}
+
+const rejectFriendRequest = async (request: FriendRequest) => {
+  try {
+    const { socialAPI } = await import('@/api/social')
+    await socialAPI.rejectFriendRequest(request.id)
+
+    const index = friendRequests.value.findIndex(r => r.id === request.id)
+    if (index > -1) {
+      friendRequests.value.splice(index, 1)
+    }
+
+    alert(`已拒绝 ${request.sender.username} 的好友请求`)
+  } catch (error: any) {
+    console.error('拒绝好友请求失败:', error)
+    alert(error.response?.data?.message || '拒绝好友请求失败')
+  }
+}
+
+const removeFriend = (friend: Friend) => {
   if (confirm(`确定要删除好友 ${friend.username} 吗？`)) {
     const index = friends.value.findIndex(f => f.id === friend.id)
     if (index > -1) {
@@ -435,7 +501,7 @@ const removeFriend = (friend: any) => {
   }
 }
 
-const openChat = (friend: any) => {
+const openChat = (friend: Friend) => {
   chatFriend.value = friend
   showChatWindow.value = true
 }
@@ -445,7 +511,7 @@ const closeChatWindow = () => {
   chatFriend.value = null
 }
 
-const openGiftModal = (friend: any) => {
+const openGiftModal = (friend: Friend) => {
   selectedFriend.value = friend
   showGiftModal.value = true
 }
@@ -481,8 +547,41 @@ const sendGift = () => {
   closeGiftModal()
 }
 
+// 数据加载函数
+const loadFriends = async () => {
+  try {
+    const { socialAPI } = await import('@/api/social')
+    friends.value = await socialAPI.getFriends()
+  } catch (error) {
+    console.error('加载好友列表失败:', error)
+  }
+}
+
+const loadFriendRequests = async () => {
+  try {
+    const { socialAPI } = await import('@/api/social')
+    friendRequests.value = await socialAPI.getFriendRequests()
+  } catch (error) {
+    console.error('加载好友请求失败:', error)
+  }
+}
+
 // 生命周期
-onMounted(() => {
-  // 这里可以加载真实的好友数据
+onMounted(async () => {
+  if (!authStore.isAuthenticated) {
+    return
+  }
+
+  try {
+    loading.value = true
+    await Promise.all([
+      loadFriends(),
+      loadFriendRequests()
+    ])
+  } catch (error) {
+    console.error('加载数据失败:', error)
+  } finally {
+    loading.value = false
+  }
 })
 </script>

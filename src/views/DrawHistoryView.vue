@@ -1,154 +1,201 @@
 <template>
   <div class="container mx-auto px-4 py-8">
-    <div class="text-center mb-8">
-      <h1 class="mb-4" style="font-family: var(--font-heading); font-size: var(--text-4xl); color: var(--color-text-primary); font-weight: 900;">
-        📜 抽取历史
-      </h1>
-      <p style="font-size: var(--text-lg); color: var(--color-text-secondary); font-family: var(--font-body);">
-        回顾你的抽卡战绩
-      </p>
-    </div>
-
-    <div v-if="authStore.isAuthenticated">
-      <!-- 统计信息 -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div class="card p-6 text-center">
-          <div class="text-3xl mb-2">🎲</div>
-          <div class="text-2xl font-bold" style="color: var(--color-accent);">{{ mockHistory.length }}</div>
-          <div class="text-sm" style="color: var(--color-text-secondary);">总抽取次数</div>
-        </div>
-        <div class="card p-6 text-center">
-          <div class="text-3xl mb-2">💰</div>
-          <div class="text-2xl font-bold" style="color: var(--color-accent);">{{ totalSpent }}</div>
-          <div class="text-sm" style="color: var(--color-text-secondary);">总消耗积分</div>
-        </div>
-        <div class="card p-6 text-center">
-          <div class="text-3xl mb-2">🐾</div>
-          <div class="text-2xl font-bold" style="color: var(--color-accent);">{{ mockHistory.length }}</div>
-          <div class="text-sm" style="color: var(--color-text-secondary);">获得宠物</div>
-        </div>
-        <div class="card p-6 text-center">
-          <div class="text-3xl mb-2">⭐</div>
-          <div class="text-2xl font-bold" style="color: var(--color-accent);">{{ rareCount }}</div>
-          <div class="text-sm" style="color: var(--color-text-secondary);">稀有及以上</div>
-        </div>
+    <div class="max-w-4xl mx-auto">
+      <!-- 页面标题 -->
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-neutral-text-primary mb-2">抽取历史</h1>
+        <p class="text-neutral-text-secondary">查看您的所有抽取记录</p>
       </div>
 
-      <div v-if="mockHistory.length > 0" class="space-y-4">
-        <div v-for="record in mockHistory" :key="record.id" class="card p-6">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center space-x-4">
-              <div class="w-16 h-16 rounded-lg flex items-center justify-center" style="background: var(--color-secondary);">
-                <span class="text-2xl">{{ record.petEmoji }}</span>
+      <!-- 加载状态 -->
+      <div v-if="loading" class="text-center py-16">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
+        <p class="text-neutral-text-secondary">加载中...</p>
+      </div>
+
+      <!-- 历史记录列表 -->
+      <div v-else-if="drawHistory.length > 0" class="space-y-4">
+        <div
+          v-for="event in drawHistory"
+          :key="event.id"
+          class="glass-card p-6 hover:bg-white/5 transition-colors"
+        >
+          <!-- 事件头部信息 -->
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center space-x-3">
+              <div class="w-10 h-10 bg-primary-500 rounded-lg flex items-center justify-center">
+                <span class="text-white text-lg">🎲</span>
               </div>
               <div>
-                <h3 class="font-semibold" style="color: var(--color-text-primary);">{{ record.petName }}</h3>
-                <p style="color: var(--color-text-secondary);">{{ record.seriesName }}</p>
-                <p class="text-sm" style="color: var(--color-text-secondary);">{{ record.time }}</p>
+                <h3 class="font-semibold text-neutral-text-primary">
+                  {{ event.series?.name || '未知系列' }}
+                </h3>
+                <p class="text-sm text-neutral-text-secondary">
+                  {{ formatDate(event.createdAt) }}
+                </p>
               </div>
             </div>
-
             <div class="text-right">
-              <span class="rarity-badge mb-2" :class="getRarityBadgeClass(record.rarity)">
-                {{ getRarityText(record.rarity) }}
-              </span>
-              <p class="text-sm" style="color: var(--color-text-secondary);">消耗 {{ record.cost }} 积分</p>
+              <p class="text-sm text-neutral-text-secondary">消耗积分</p>
+              <p class="font-semibold text-accent-500">{{ event.cost }}</p>
+            </div>
+          </div>
+
+          <!-- 抽取结果 -->
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+            <div
+              v-for="result in event.results || []"
+              :key="result.id"
+              class="relative group"
+            >
+              <!-- 宠物卡片 -->
+              <div class="aspect-square rounded-lg overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 relative">
+                <img
+                  v-if="result.pet?.babyImageUrl"
+                  :src="result.pet.babyImageUrl"
+                  :alt="result.pet.name"
+                  class="w-full h-full object-cover"
+                />
+                <div v-else class="w-full h-full flex items-center justify-center">
+                  <span class="text-4xl">🐾</span>
+                </div>
+                
+                <!-- 稀有度角标 -->
+                <div
+                  :class="[
+                    'absolute top-1 right-1 px-2 py-1 rounded text-xs font-bold text-white',
+                    getRarityColor(result.pet?.rarity)
+                  ]"
+                >
+                  {{ result.pet?.rarity || 'N' }}
+                </div>
+              </div>
+
+              <!-- 宠物信息 -->
+              <div class="mt-2 text-center">
+                <p class="text-sm font-medium text-neutral-text-primary truncate">
+                  {{ result.pet?.name || '未知宠物' }}
+                </p>
+              </div>
+
+              <!-- 悬浮提示 -->
+              <div class="absolute inset-0 bg-black/80 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <div class="text-center text-white p-2">
+                  <p class="font-semibold">{{ result.pet?.name }}</p>
+                  <p class="text-xs opacity-80">{{ result.pet?.rarity }}</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
-      
+
+      <!-- 空状态 -->
       <div v-else class="text-center py-16">
         <div class="text-6xl mb-4">📜</div>
-        <h2 class="text-2xl font-semibold text-neutral-text-primary mb-2">暂无抽取记录</h2>
-        <p class="text-neutral-text-secondary mb-6">去商店抽取你的第一只宠物吧！</p>
-        <BaseButton variant="primary" @click="$router.push('/store')">
+        <h3 class="text-xl font-semibold mb-2">暂无抽取记录</h3>
+        <p class="text-neutral-text-secondary mb-4">您还没有进行过任何抽取，快去商店试试手气吧！</p>
+        <RouterLink to="/store" class="btn btn-primary">
           前往商店
-        </BaseButton>
+        </RouterLink>
       </div>
-    </div>
-    
-    <div v-else class="text-center py-16">
-      <h2 class="text-2xl font-semibold text-neutral-text-primary mb-2">请先登录</h2>
-      <p class="text-neutral-text-secondary mb-6">登录后查看抽取历史</p>
-      <BaseButton variant="primary" @click="uiStore.openLoginModal">
-        登录
-      </BaseButton>
+
+      <!-- 分页 -->
+      <div v-if="pagination.pages > 1" class="mt-8 flex justify-center">
+        <div class="flex space-x-2">
+          <button
+            v-for="page in pagination.pages"
+            :key="page"
+            @click="loadHistory(page)"
+            :class="[
+              'px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+              page === pagination.page
+                ? 'bg-primary-500 text-white'
+                : 'bg-white/10 text-neutral-text-secondary hover:bg-white/20'
+            ]"
+          >
+            {{ page }}
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useAuthStore } from '@/store/auth'
-import { useUiStore } from '@/store/ui'
-import BaseButton from '@/components/base/BaseButton.vue'
+import { ref, onMounted } from 'vue'
+import { drawApi } from '@/api/draw'
+import type { DrawEvent } from '@/types'
 
-const authStore = useAuthStore()
-const uiStore = useUiStore()
+// 响应式数据
+const loading = ref(true)
+const drawHistory = ref<DrawEvent[]>([])
+const pagination = ref({
+  page: 1,
+  limit: 20,
+  total: 0,
+  pages: 1
+})
 
-const mockHistory = ref([
-  {
-    id: 1,
-    petName: '月光守护者',
-    petEmoji: '🌙',
-    seriesName: '星空守护系列',
-    rarity: 'SSR',
-    cost: 150,
-    time: '2小时前'
-  },
-  {
-    id: 2,
-    petName: '海星宝宝',
-    petEmoji: '⭐',
-    seriesName: '海洋冒险系列',
-    rarity: 'R',
-    cost: 120,
-    time: '1天前'
-  },
-  {
-    id: 3,
-    petName: '小精灵',
-    petEmoji: '🧚‍♀️',
-    seriesName: '森林精灵系列',
-    rarity: 'N',
-    cost: 100,
-    time: '3天前'
-  },
-  {
-    id: 4,
-    petName: '森林守护者',
-    petEmoji: '🌳',
-    seriesName: '森林精灵系列',
-    rarity: 'SR',
-    cost: 100,
-    time: '5天前'
+// 加载抽取历史
+const loadHistory = async (page = 1) => {
+  try {
+    loading.value = true
+    const response = await drawApi.getDrawHistory(page, pagination.value.limit)
+    
+    drawHistory.value = response.data || []
+    pagination.value = response.pagination || pagination.value
+  } catch (error) {
+    console.error('加载抽取历史失败:', error)
+    drawHistory.value = []
+  } finally {
+    loading.value = false
   }
-])
-
-// 计算属性
-const totalSpent = computed(() => mockHistory.value.reduce((sum, record) => sum + record.cost, 0))
-const rareCount = computed(() => mockHistory.value.filter(record => ['R', 'SR', 'SSR', 'UR'].includes(record.rarity)).length)
-
-const getRarityBadgeClass = (rarity: string) => {
-  const classes = {
-    'N': 'rarity-badge-n',
-    'R': 'rarity-badge-r',
-    'SR': 'rarity-badge-sr',
-    'SSR': 'rarity-badge-ssr',
-    'UR': 'rarity-badge-ur'
-  }
-  return classes[rarity as keyof typeof classes] || 'rarity-badge-n'
 }
 
-const getRarityText = (rarity: string) => {
-  const texts = {
-    'N': '普通',
-    'R': '稀有',
-    'SR': '史诗',
-    'SSR': '传说',
-    'UR': '神话'
-  }
-  return texts[rarity as keyof typeof texts] || '普通'
+// 格式化日期
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString)
+  return date.toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
 }
+
+// 获取稀有度颜色
+const getRarityColor = (rarity?: string) => {
+  switch (rarity) {
+    case 'UR': return 'bg-gradient-to-r from-purple-500 to-pink-500'
+    case 'SSR': return 'bg-gradient-to-r from-yellow-400 to-orange-500'
+    case 'SR': return 'bg-gradient-to-r from-purple-400 to-blue-500'
+    case 'R': return 'bg-gradient-to-r from-blue-400 to-cyan-500'
+    case 'N': return 'bg-gray-500'
+    default: return 'bg-gray-500'
+  }
+}
+
+// 生命周期
+onMounted(() => {
+  loadHistory()
+})
 </script>
+
+<style scoped>
+.glass-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+}
+
+.btn {
+  @apply px-4 py-2 rounded-lg font-medium transition-colors;
+}
+
+.btn-primary {
+  @apply bg-primary-500 text-white hover:bg-primary-600;
+}
+</style>

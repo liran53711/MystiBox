@@ -14,6 +14,21 @@
       <div class="text-6xl mb-4">🚫</div>
       <h3 class="text-xl font-semibold mb-2">访问被拒绝</h3>
       <p class="text-gray-600 mb-4">您没有管理员权限</p>
+
+      <!-- 管理员初始化按钮 -->
+      <div class="mb-4">
+        <button
+          @click="initializeAdmin"
+          :disabled="initializingAdmin"
+          class="btn btn-secondary mr-4"
+        >
+          {{ initializingAdmin ? '初始化中...' : '初始化为管理员' }}
+        </button>
+        <p class="text-sm text-gray-500 mt-2">
+          如果系统还没有管理员，您可以将自己设置为管理员
+        </p>
+      </div>
+
       <RouterLink to="/" class="btn btn-primary">
         返回首页
       </RouterLink>
@@ -164,18 +179,86 @@
                     <td class="py-3 px-4">
                       <div class="flex space-x-2">
                         <button @click="adjustUserPoints(user)" class="text-blue-600 hover:text-blue-800 text-sm">调整积分</button>
-                        <button 
+                        <button
                           v-if="user.role !== 'ADMIN'"
-                          @click="toggleUserRole(user)" 
+                          @click="toggleUserRole(user)"
                           class="text-green-600 hover:text-green-800 text-sm"
                         >
                           设为管理员
+                        </button>
+                        <button
+                          v-if="user.role !== 'ADMIN'"
+                          @click="freezeUser(user)"
+                          class="text-red-600 hover:text-red-800 text-sm"
+                        >
+                          {{ user.status === 'FROZEN' ? '解冻' : '冻结' }}
                         </button>
                       </div>
                     </td>
                   </tr>
                 </tbody>
               </table>
+            </div>
+          </div>
+
+          <!-- 广场管理 -->
+          <div v-else-if="activeTab === 'plaza'">
+            <div class="flex justify-between items-center mb-6">
+              <h3 class="text-lg font-semibold" style="color: var(--color-text-primary);">广场管理</h3>
+              <div class="flex space-x-2">
+                <input
+                  v-model="postSearchQuery"
+                  type="text"
+                  placeholder="搜索帖子..."
+                  class="input"
+                />
+                <select v-model="postFilterStatus" class="input">
+                  <option value="">全部状态</option>
+                  <option value="ACTIVE">正常</option>
+                  <option value="HIDDEN">已隐藏</option>
+                  <option value="DELETED">已删除</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="min-w-full">
+                <thead>
+                  <tr class="border-b" style="border-color: var(--color-border);">
+                    <th class="text-left py-3 px-4 font-medium" style="color: var(--color-text-primary);">ID</th>
+                    <th class="text-left py-3 px-4 font-medium" style="color: var(--color-text-primary);">作者</th>
+                    <th class="text-left py-3 px-4 font-medium" style="color: var(--color-text-primary);">内容</th>
+                    <th class="text-left py-3 px-4 font-medium" style="color: var(--color-text-primary);">点赞数</th>
+                    <th class="text-left py-3 px-4 font-medium" style="color: var(--color-text-primary);">评论数</th>
+                    <th class="text-left py-3 px-4 font-medium" style="color: var(--color-text-primary);">发布时间</th>
+                    <th class="text-left py-3 px-4 font-medium" style="color: var(--color-text-primary);">操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="post in filteredPosts" :key="post.id" class="border-b" style="border-color: var(--color-border);">
+                    <td class="py-3 px-4" style="color: var(--color-text-secondary);">{{ post.id.slice(0, 8) }}...</td>
+                    <td class="py-3 px-4" style="color: var(--color-text-primary);">{{ post.author.username }}</td>
+                    <td class="py-3 px-4" style="color: var(--color-text-secondary);">
+                      <div class="max-w-xs truncate">{{ post.content }}</div>
+                    </td>
+                    <td class="py-3 px-4" style="color: var(--color-text-secondary);">{{ post._count.likes }}</td>
+                    <td class="py-3 px-4" style="color: var(--color-text-secondary);">{{ post._count.comments }}</td>
+                    <td class="py-3 px-4" style="color: var(--color-text-secondary);">{{ formatDate(post.createdAt) }}</td>
+                    <td class="py-3 px-4">
+                      <div class="flex space-x-2">
+                        <button @click="viewPost(post)" class="text-blue-600 hover:text-blue-800 text-sm">查看</button>
+                        <button @click="deletePost(post)" class="text-red-600 hover:text-red-800 text-sm">删除</button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- 空状态 -->
+            <div v-if="filteredPosts.length === 0" class="text-center py-8">
+              <div class="text-4xl mb-2">📝</div>
+              <p style="color: var(--color-text-secondary);">暂无帖子数据</p>
             </div>
           </div>
 
@@ -241,6 +324,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/store/auth'
+import { adminApi } from '@/api/admin'
 
 const authStore = useAuthStore()
 
@@ -251,32 +335,29 @@ const isAdmin = computed(() => authStore.user?.role === 'ADMIN')
 const activeTab = ref('series')
 const showCreateSeriesModal = ref(false)
 const userSearchQuery = ref('')
+const postSearchQuery = ref('')
+const postFilterStatus = ref('')
 
 const tabs = [
   { id: 'series', name: '系列管理' },
   { id: 'users', name: '用户管理' },
+  { id: 'plaza', name: '广场管理' },
   { id: 'analytics', name: '数据统计' }
 ]
 
-// 模拟数据
+// 响应式数据
 const stats = ref({
-  totalUsers: 1234,
-  totalSeries: 8,
-  totalPets: 32,
-  totalDraws: 5678
+  totalUsers: 0,
+  totalSeries: 0,
+  totalPets: 0,
+  totalDraws: 0
 })
 
-const seriesList = ref([
-  { id: 1, name: '森林精灵系列', price: 100, isActive: true, petCount: 4, image: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=100&h=100&fit=crop' },
-  { id: 2, name: '海洋冒险系列', price: 120, isActive: true, petCount: 4, image: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=100&h=100&fit=crop' },
-  { id: 3, name: '星空守护系列', price: 150, isActive: false, petCount: 4, image: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=100&h=100&fit=crop' }
-])
-
-const usersList = ref([
-  { id: '1', username: 'testuser', points: 1000, role: 'USER', createdAt: new Date().toISOString() },
-  { id: '2', username: 'admin', points: 10000, role: 'ADMIN', createdAt: new Date().toISOString() },
-  { id: '3', username: 'player1', points: 500, role: 'USER', createdAt: new Date().toISOString() }
-])
+const seriesList = ref<any[]>([])
+const usersList = ref<any[]>([])
+const postsList = ref<any[]>([])
+const loading = ref(true)
+const initializingAdmin = ref(false)
 
 const analytics = ref({
   todayDraws: 45,
@@ -367,8 +448,160 @@ const toggleUserRole = (user: any) => {
   }
 }
 
+const freezeUser = (user: any) => {
+  const action = user.status === 'FROZEN' ? '解冻' : '冻结'
+  if (confirm(`确定要${action}用户 ${user.username} 吗？`)) {
+    user.status = user.status === 'FROZEN' ? 'ACTIVE' : 'FROZEN'
+    console.log(`${action}用户:`, user)
+  }
+}
+
+const filteredPosts = computed(() => {
+  let filtered = postsList.value
+
+  if (postSearchQuery.value) {
+    const query = postSearchQuery.value.toLowerCase()
+    filtered = filtered.filter(post =>
+      post.content.toLowerCase().includes(query) ||
+      post.author.username.toLowerCase().includes(query)
+    )
+  }
+
+  if (postFilterStatus.value) {
+    filtered = filtered.filter(post => post.status === postFilterStatus.value)
+  }
+
+  return filtered
+})
+
+const viewPost = (post: any) => {
+  console.log('查看帖子:', post)
+  // 可以打开帖子详情模态框
+}
+
+const deletePost = async (post: any) => {
+  if (confirm(`确定要删除这条帖子吗？\n内容: ${post.content.slice(0, 50)}...`)) {
+    try {
+      const { showcaseApi } = await import('@/api/showcase')
+      await showcaseApi.deletePost(post.id)
+
+      // 从列表中移除
+      const index = postsList.value.findIndex(p => p.id === post.id)
+      if (index > -1) {
+        postsList.value.splice(index, 1)
+      }
+
+      alert('帖子已删除')
+    } catch (error: any) {
+      console.error('删除帖子失败:', error)
+      alert(error.response?.data?.message || '删除失败')
+    }
+  }
+}
+
+// 管理员初始化
+const initializeAdmin = async () => {
+  try {
+    initializingAdmin.value = true
+    await adminApi.initAdmin()
+
+    // 重新获取用户信息以更新角色
+    await authStore.refreshUser()
+
+    alert('管理员权限设置成功！页面将刷新。')
+    window.location.reload()
+  } catch (error: any) {
+    console.error('初始化管理员失败:', error)
+    alert(error.response?.data?.message || '初始化失败')
+  } finally {
+    initializingAdmin.value = false
+  }
+}
+
+// 数据加载函数
+const loadStats = async () => {
+  try {
+    const headers = {
+      'Authorization': `Bearer ${authStore.accessToken}`,
+      'Content-Type': 'application/json'
+    }
+
+    // 加载统计数据
+    const [usersCount, seriesCount, petsCount, drawsCount] = await Promise.all([
+      fetch('/api/admin/stats/users', { headers }).then(r => r.json()),
+      fetch('/api/admin/stats/series', { headers }).then(r => r.json()),
+      fetch('/api/admin/stats/pets', { headers }).then(r => r.json()),
+      fetch('/api/admin/stats/draws', { headers }).then(r => r.json())
+    ])
+
+    stats.value = {
+      totalUsers: usersCount.count || 0,
+      totalSeries: seriesCount.count || 0,
+      totalPets: petsCount.count || 0,
+      totalDraws: drawsCount.count || 0
+    }
+  } catch (error) {
+    console.error('加载统计数据失败:', error)
+  }
+}
+
+const loadSeries = async () => {
+  try {
+    const { seriesApi } = await import('@/api/series')
+    const series = await seriesApi.getAll()
+    seriesList.value = series.map((s: any) => ({
+      ...s,
+      image: s.coverImageUrl,
+      price: s.drawPrice,
+      petCount: s._count?.pets || 0
+    }))
+  } catch (error) {
+    console.error('加载系列数据失败:', error)
+  }
+}
+
+const loadUsers = async () => {
+  try {
+    const response = await fetch('/api/admin/users', {
+      headers: {
+        'Authorization': `Bearer ${authStore.accessToken}`,
+        'Content-Type': 'application/json'
+      }
+    })
+    if (response.ok) {
+      usersList.value = await response.json()
+    }
+  } catch (error) {
+    console.error('加载用户数据失败:', error)
+  }
+}
+
+const loadPosts = async () => {
+  try {
+    const { showcaseApi } = await import('@/api/showcase')
+    const response = await showcaseApi.getPosts({ limit: 100 })
+    postsList.value = response.posts
+  } catch (error) {
+    console.error('加载帖子数据失败:', error)
+  }
+}
+
 // 生命周期
-onMounted(() => {
-  // 这里可以加载真实数据
+onMounted(async () => {
+  if (!isAdmin.value) return
+
+  try {
+    loading.value = true
+    await Promise.all([
+      loadStats(),
+      loadSeries(),
+      loadUsers(),
+      loadPosts()
+    ])
+  } catch (error) {
+    console.error('加载管理员数据失败:', error)
+  } finally {
+    loading.value = false
+  }
 })
 </script>

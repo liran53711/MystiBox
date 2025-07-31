@@ -43,7 +43,8 @@
       <div
         v-for="post in sortedAndFilteredPosts"
         :key="post.id"
-        class="card overflow-hidden"
+        :data-post-id="post.id"
+        class="card overflow-hidden card-stagger-in"
       >
         <!-- 用户信息 -->
         <div class="p-4 border-b" style="border-color: var(--color-border);">
@@ -59,11 +60,11 @@
         </div>
 
         <!-- 宠物图片 -->
-        <div class="aspect-square relative">
+        <div class="aspect-square relative" :data-pet-id="post.id">
           <img
-            :src="post.userPet.status === 'ADULT' ? post.userPet.pet.adultImage : post.userPet.pet.babyImage"
+            :src="post.userPet.status === 'ADULT' ? post.userPet.pet.adultImageUrl : post.userPet.pet.babyImageUrl"
             :alt="post.userPet.nickname || post.userPet.pet.name"
-            class="w-full h-full object-cover"
+            class="w-full h-full object-cover transition-transform duration-300"
           />
           <!-- 稀有度标识 -->
           <div class="absolute top-2 right-2">
@@ -91,24 +92,49 @@
             <div class="flex space-x-4">
               <button
                 @click="toggleLike(post)"
-                :class="post.isLiked ? 'text-red-500' : 'text-gray-500'"
-                class="flex items-center space-x-1 hover:text-red-500 transition-colors"
+                :class="[
+                  'like-button flex items-center space-x-1 hover:text-red-500 transition-colors',
+                  post.isLiked ? 'liked text-red-500' : 'text-gray-500'
+                ]"
               >
                 <span>{{ post.isLiked ? '❤️' : '🤍' }}</span>
-                <span class="text-sm">{{ post.likesCount }}</span>
+                <span class="text-sm">{{ post._count?.likes || 0 }}</span>
               </button>
               <button
                 @click="toggleComments(post)"
                 class="flex items-center space-x-1 text-gray-500 hover:text-blue-500 transition-colors"
               >
                 <span>💬</span>
-                <span class="text-sm">{{ post.commentsCount }}</span>
+                <span class="text-sm">{{ post._count?.comments || 0 }}</span>
+              </button>
+              <button
+                @click="interactWithPet(post)"
+                class="flex items-center space-x-1 text-gray-500 hover:text-yellow-500 transition-colors"
+              >
+                <span>🐾</span>
+                <span class="text-sm">拍拍</span>
+              </button>
+            </div>
+            <div class="flex space-x-2">
+              <button
+                v-if="post.userPet.forSale"
+                @click="buyPet(post)"
+                class="px-3 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600 transition-colors"
+              >
+                💰 {{ post.userPet.price }}积分
+              </button>
+              <button
+                v-if="authStore.user?.id !== post.author.id"
+                @click="openTradeModal(post)"
+                class="px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition-colors"
+              >
+                🔄 交易
               </button>
             </div>
           </div>
 
           <!-- 评论区域 -->
-          <div v-if="post.showComments" class="mt-4 pt-4 border-t">
+          <div v-if="getPostUIState(post.id).showComments" class="mt-4 pt-4 border-t">
             <!-- 评论列表 -->
             <div v-if="post.comments && post.comments.length > 0" class="space-y-3 mb-4">
               <div v-for="comment in post.comments" :key="comment.id" class="flex space-x-2">
@@ -128,7 +154,7 @@
             <!-- 评论输入框 -->
             <div class="flex space-x-2">
               <input
-                v-model="post.newComment"
+                v-model="getPostUIState(post.id).newComment"
                 type="text"
                 placeholder="写个评论..."
                 class="flex-1 px-3 py-2 border rounded-lg text-sm"
@@ -161,133 +187,54 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/store/auth'
+import { useShowcaseStore } from '@/store/showcase'
+import { usePoints } from '@/composables/usePoints'
+import { showcaseApi, type ShowcasePost } from '@/api/showcase'
 
 const authStore = useAuthStore()
+const showcaseStore = useShowcaseStore()
+const { awardPoints, spendPoints } = usePoints()
 
 // 响应式数据
-const posts = ref([])
 const searchQuery = ref('')
 const filterRarity = ref('')
-const sortBy = ref('newest')
+const sortBy = ref<'newest' | 'popular' | 'rarity'>('newest')
+const posts = ref<ShowcasePost[]>([])
+const loading = ref(true)
+const currentPage = ref(1)
+const totalPages = ref(1)
 
-// 模拟数据
-const mockPosts = [
-  {
-    id: '1',
-    content: '今天抽到了我的第一只森林精灵，太开心了！',
-    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2小时前
-    author: {
-      id: '1',
-      username: '宠物爱好者'
-    },
-    userPet: {
-      id: '1',
-      nickname: '小绿',
-      status: 'BABY',
-      pet: {
-        id: '1',
-        name: '小精灵',
-        rarity: 'N',
-        story: '来自森林的小精灵',
-        babyImage: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=300&fit=crop',
-        adultImage: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=400&fit=crop'
-      }
-    },
-    likesCount: 24,
-    commentsCount: 8,
-    isLiked: false,
-    showComments: false,
-    newComment: '',
-    comments: [
-      {
-        id: '1',
-        content: '好可爱啊！',
-        createdAt: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
-        author: { id: '2', username: '路人甲' }
-      },
-      {
-        id: '2',
-        content: '恭喜恭喜！',
-        createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-        author: { id: '3', username: '收藏家' }
-      }
-    ]
-  },
-  {
-    id: '2',
-    content: '我的星星宝宝终于进化成成体了！看看这华丽的形态！',
-    createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(), // 5小时前
-    author: {
-      id: '2',
-      username: '星空收藏家'
-    },
-    userPet: {
-      id: '2',
-      nickname: '星辰',
-      status: 'ADULT',
-      pet: {
-        id: '3',
-        name: '小星星',
-        rarity: 'SR',
-        story: '闪闪发光的小星星',
-        babyImage: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=300&h=300&fit=crop',
-        adultImage: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=400&h=400&fit=crop'
-      }
-    },
-    likesCount: 56,
-    commentsCount: 15,
-    isLiked: true,
-    showComments: false,
-    newComment: '',
-    comments: []
-  },
-  {
-    id: '3',
-    content: '新手第一抽就是稀有度！运气太好了！',
-    createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1天前
-    author: {
-      id: '3',
-      username: '新手玩家'
-    },
-    userPet: {
-      id: '3',
-      nickname: null,
-      status: 'BABY',
-      pet: {
-        id: '2',
-        name: '森林守护者',
-        rarity: 'R',
-        story: '守护森林的精灵',
-        babyImage: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=300&fit=crop',
-        adultImage: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=400&fit=crop'
-      }
-    },
-    likesCount: 12,
-    commentsCount: 3,
-    isLiked: false,
-    showComments: false,
-    newComment: '',
-    comments: []
+// UI状态管理
+const postUIStates = ref<Record<string, { showComments: boolean; newComment: string }>>({})
+
+// 获取帖子UI状态
+const getPostUIState = (postId: string) => {
+  if (!postUIStates.value[postId]) {
+    postUIStates.value[postId] = {
+      showComments: false,
+      newComment: ''
+    }
   }
-]
+  return postUIStates.value[postId]
+}
 
 // 计算属性
 const sortedAndFilteredPosts = computed(() => {
   let filtered = posts.value
 
-  // 搜索筛选
+  // 按稀有度筛选
+  if (filterRarity.value) {
+    filtered = filtered.filter(post => post.userPet.pet.rarity === filterRarity.value)
+  }
+
+  // 按搜索关键词筛选
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
     filtered = filtered.filter(post =>
-      post.author.username.toLowerCase().includes(query) ||
-      (post.userPet.nickname || post.userPet.pet.name).toLowerCase().includes(query) ||
-      post.content.toLowerCase().includes(query)
+      post.userPet.pet.name.toLowerCase().includes(query) ||
+      post.content.toLowerCase().includes(query) ||
+      post.author.username.toLowerCase().includes(query)
     )
-  }
-
-  // 稀有度筛选
-  if (filterRarity.value) {
-    filtered = filtered.filter(post => post.userPet.pet.rarity === filterRarity.value)
   }
 
   // 排序
@@ -296,9 +243,9 @@ const sortedAndFilteredPosts = computed(() => {
       case 'newest':
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       case 'popular':
-        return b.likesCount - a.likesCount
+        return (b._count?.likes || 0) - (a._count?.likes || 0)
       case 'rarity':
-        const rarityOrder = { 'UR': 5, 'SSR': 4, 'SR': 3, 'R': 2, 'N': 1 }
+        const rarityOrder: Record<string, number> = { 'UR': 5, 'SSR': 4, 'SR': 3, 'R': 2, 'N': 1 }
         return (rarityOrder[b.userPet.pet.rarity] || 1) - (rarityOrder[a.userPet.pet.rarity] || 1)
       default:
         return 0
@@ -335,41 +282,170 @@ const formatTime = (dateString: string) => {
   }
 }
 
-const toggleLike = (post: any) => {
-  post.isLiked = !post.isLiked
-  post.likesCount += post.isLiked ? 1 : -1
-  // 这里应该调用API更新点赞状态
-  console.log('点赞状态:', post.id, post.isLiked)
+const toggleLike = async (post: any) => {
+  if (!authStore.isAuthenticated) {
+    alert('请先登录')
+    return
+  }
+
+  try {
+    const result = await showcaseApi.toggleLike(post.id)
+
+    // 更新本地状态
+    post.isLiked = result.isLiked
+    post._count.likes = result.likesCount
+
+    // 如果是点赞操作，触发动画和奖励积分
+    if (result.isLiked) {
+      await awardPoints('LIKE_POST')
+
+      // 触发点赞动画
+      const likeButton = document.querySelector(`[data-post-id="${post.id}"] .like-button`)
+      if (likeButton) {
+        likeButton.classList.add('liked')
+        setTimeout(() => {
+          likeButton.classList.remove('liked')
+          likeButton.classList.add('liked')
+        }, 300)
+      }
+    }
+  } catch (error: any) {
+    console.error('点赞操作失败:', error)
+    alert(error.response?.data?.message || '操作失败')
+  }
 }
 
 const toggleComments = (post: any) => {
-  post.showComments = !post.showComments
+  const uiState = getPostUIState(post.id)
+  uiState.showComments = !uiState.showComments
 }
 
-const addComment = (post: any) => {
+const addComment = async (post: any) => {
   if (!post.newComment.trim()) return
 
-  const newComment = {
-    id: Date.now().toString(),
-    content: post.newComment.trim(),
-    createdAt: new Date().toISOString(),
-    author: {
+  // 使用 store 方法
+  showcaseStore.addComment(
+    post.id,
+    post.newComment.trim(),
+    {
       id: authStore.user?.id || 'anonymous',
       username: authStore.user?.username || '匿名用户'
     }
-  }
+  )
 
-  post.comments.push(newComment)
-  post.commentsCount++
   post.newComment = ''
 
+  // 奖励评论积分
+  await awardPoints('COMMENT')
+
   // 这里应该调用API添加评论
-  console.log('添加评论:', post.id, newComment)
+  console.log('添加评论:', post.id)
+}
+
+// 宠物互动功能
+const interactWithPet = async (post: any) => {
+  // 检查是否是自己的宠物
+  if (authStore.user?.id === post.author.id) {
+    alert('不能与自己的宠物互动哦！')
+    return
+  }
+
+  // 奖励互动积分
+  const success = await awardPoints('PET_INTERACTION')
+  if (success) {
+    // 添加互动动画效果
+    const petElement = document.querySelector(`[data-pet-id="${post.id}"]`)
+    if (petElement) {
+      petElement.classList.add('pet-bounce')
+      setTimeout(() => {
+        petElement.classList.remove('pet-bounce')
+      }, 600)
+    }
+
+    alert('你轻轻拍了拍这只可爱的宠物！获得了2积分！')
+  } else {
+    alert('今日互动次数已达上限！')
+  }
+
+  console.log('与宠物互动:', post.userPet.pet.name)
+}
+
+// 购买宠物功能
+const buyPet = async (post: any) => {
+  if (!authStore.user) {
+    alert('请先登录！')
+    return
+  }
+
+  if (authStore.user.id === post.author.id) {
+    alert('不能购买自己的宠物！')
+    return
+  }
+
+  const price = post.userPet.price || 500
+  const confirmed = confirm(`确定要花费 ${price} 积分购买这只 ${post.userPet.pet.name} 吗？`)
+
+  if (confirmed) {
+    const success = await spendPoints(price, `购买宠物: ${post.userPet.pet.name}`)
+    if (success) {
+      alert(`购买成功！${post.userPet.pet.name} 现在是你的了！`)
+      // 这里应该调用API转移宠物所有权
+      console.log('购买宠物:', post.userPet)
+    } else {
+      alert('积分不足！')
+    }
+  }
+}
+
+// 打开交易模态框
+const openTradeModal = (post: any) => {
+  if (!authStore.user) {
+    alert('请先登录！')
+    return
+  }
+
+  if (authStore.user.id === post.author.id) {
+    alert('不能与自己交易！')
+    return
+  }
+
+  // 这里应该打开一个交易模态框
+  const tradeOffer = prompt(`想要与 ${post.author.username} 交易什么？请输入你想要交换的宠物名称或积分数量：`)
+
+  if (tradeOffer) {
+    alert(`交易请求已发送给 ${post.author.username}！`)
+    console.log('发起交易:', {
+      from: authStore.user.username,
+      to: post.author.username,
+      targetPet: post.userPet.pet.name,
+      offer: tradeOffer
+    })
+  }
+}
+
+// 数据加载函数
+const loadPosts = async () => {
+  try {
+    loading.value = true
+    const response = await showcaseApi.getPosts({
+      page: currentPage.value,
+      sortBy: sortBy.value,
+      rarity: filterRarity.value || undefined,
+      search: searchQuery.value || undefined
+    })
+
+    posts.value = response.posts
+    totalPages.value = response.totalPages
+  } catch (error) {
+    console.error('加载广场帖子失败:', error)
+    posts.value = []
+  } finally {
+    loading.value = false
+  }
 }
 
 // 生命周期
 onMounted(() => {
-  // 这里应该从API获取帖子数据
-  posts.value = mockPosts
+  loadPosts()
 })
 </script>

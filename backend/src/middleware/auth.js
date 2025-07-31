@@ -12,7 +12,7 @@ const authenticate = async (req, res, next) => {
     const decoded = verifyToken(token);
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
-      select: { id: true, username: true, email: true, points: true, isAdmin: true }
+      select: { id: true, username: true, points: true, role: true, avatar: true }
     });
 
     if (!user) {
@@ -27,7 +27,7 @@ const authenticate = async (req, res, next) => {
 };
 
 const requireAdmin = (req, res, next) => {
-  if (!req.user?.isAdmin) {
+  if (req.user?.role !== 'ADMIN') {
     return res.status(403).json({ error: '需要管理员权限' });
   }
   next();

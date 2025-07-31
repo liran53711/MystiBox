@@ -15,9 +15,14 @@
           </p>
         </div>
       </div>
-      <button @click="$emit('close')" class="text-white hover:text-gray-200 transition-colors">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      <button
+        @click="$emit('close')"
+        class="flex items-center justify-center w-8 h-8 text-white hover:bg-red-500 hover:bg-opacity-80 rounded-full transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50"
+        title="关闭聊天"
+        aria-label="关闭聊天窗口"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
     </div>
@@ -161,9 +166,14 @@
       <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-96 overflow-y-auto">
         <div class="flex justify-between items-center mb-4">
           <h3 class="text-lg font-bold">赠送给 {{ friend.username }}</h3>
-          <button @click="closeGiftModal" class="text-gray-500 hover:text-gray-700">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          <button
+            @click="closeGiftModal"
+            class="flex items-center justify-center w-8 h-8 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-full transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-red-200"
+            title="关闭"
+            aria-label="关闭礼物选择"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
@@ -266,6 +276,7 @@
 
 <script setup lang="ts">
 import { ref, nextTick, onMounted, watch } from 'vue'
+import { usePoints } from '@/composables/usePoints'
 
 interface Props {
   friend: {
@@ -279,6 +290,8 @@ const props = defineProps<Props>()
 const emit = defineEmits<{
   close: []
 }>()
+
+const { awardPoints } = usePoints()
 
 // 响应式数据
 const newMessage = ref('')
@@ -407,7 +420,7 @@ const formatTime = (dateString: string) => {
   }
 }
 
-const sendMessage = () => {
+const sendMessage = async () => {
   if (!newMessage.value.trim()) return
 
   const message = {
@@ -420,6 +433,9 @@ const sendMessage = () => {
 
   messages.value.push(message)
   newMessage.value = ''
+
+  // 奖励聊天积分
+  await awardPoints('CHAT_MESSAGE')
 
   // 滚动到底部
   nextTick(() => {

@@ -2,9 +2,9 @@
   <button
     :class="buttonClasses"
     :disabled="disabled || loading"
-    @click="$emit('click', $event)"
+    @click="handleClick"
   >
-    <div v-if="loading" class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+    <div v-if="loading" class="spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
     <slot />
   </button>
 </template>
@@ -28,35 +28,49 @@ const props = withDefaults(defineProps<Props>(), {
   fullWidth: false,
 })
 
-defineEmits<{
+const emit = defineEmits<{
   click: [event: MouseEvent]
 }>()
 
-const buttonClasses = computed(() => {
-  const baseClasses = 'inline-flex items-center justify-center font-semibold rounded-xl transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2'
-  
-  const variantClasses = {
-    primary: 'bg-accent-500 hover:bg-accent-600 text-white shadow-lg hover:shadow-xl focus:ring-accent-500',
-    secondary: 'bg-white/20 hover:bg-white/30 text-neutral-text-primary border border-white/30 backdrop-blur-md focus:ring-white/50',
-    danger: 'bg-error hover:bg-red-600 text-white shadow-lg hover:shadow-xl focus:ring-error',
-    ghost: 'text-neutral-text-primary hover:bg-white/10 focus:ring-white/50',
+// 点击处理函数，添加点击反馈动画
+const handleClick = (event: MouseEvent) => {
+  if (!props.disabled && !props.loading) {
+    // 添加点击反馈类
+    const button = event.currentTarget as HTMLButtonElement
+    button.classList.add('btn-click-feedback')
+
+    // 移除动画类
+    setTimeout(() => {
+      button.classList.remove('btn-click-feedback')
+    }, 150)
+
+    emit('click', event)
   }
-  
+}
+
+const buttonClasses = computed(() => {
+  const baseClasses = 'btn'
+
+  const variantClasses = {
+    primary: 'btn-primary',
+    secondary: 'btn-secondary',
+    danger: 'bg-red-500 hover:bg-red-600 text-white',
+    ghost: 'bg-transparent hover:bg-gray-100 text-gray-700',
+  }
+
   const sizeClasses = {
     sm: 'px-3 py-2 text-sm',
     md: 'px-6 py-3 text-base',
     lg: 'px-8 py-4 text-lg',
   }
-  
+
   const widthClass = props.fullWidth ? 'w-full' : ''
-  const disabledClass = (props.disabled || props.loading) ? 'opacity-50 cursor-not-allowed transform-none hover:scale-100' : ''
-  
+
   return [
     baseClasses,
     variantClasses[props.variant],
     sizeClasses[props.size],
     widthClass,
-    disabledClass,
-  ].join(' ')
+  ].filter(Boolean).join(' ')
 })
 </script>

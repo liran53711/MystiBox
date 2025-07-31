@@ -8,6 +8,7 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
   const accessToken = ref<string | null>(null)
   const isLoading = ref(false)
+  const isInitialized = ref(false)
 
   // Getters
   const isAuthenticated = computed(() => !!user.value && !!accessToken.value)
@@ -60,17 +61,26 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   function checkAuth() {
-    const token = localStorage.getItem('accessToken')
-    const userData = localStorage.getItem('user')
-    
-    if (token && userData) {
-      try {
-        accessToken.value = token
-        user.value = JSON.parse(userData)
-      } catch (error) {
-        // 如果解析失败，清除无效数据
-        logout()
+    if (isInitialized.value) return
+
+    isLoading.value = true
+
+    try {
+      const token = localStorage.getItem('accessToken')
+      const userData = localStorage.getItem('user')
+
+      if (token && userData) {
+        try {
+          accessToken.value = token
+          user.value = JSON.parse(userData)
+        } catch (error) {
+          // 如果解析失败，清除无效数据
+          logout()
+        }
       }
+    } finally {
+      isLoading.value = false
+      isInitialized.value = true
     }
   }
 
@@ -82,11 +92,35 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  function addPoints(amount: number) {
+    if (user.value) {
+      user.value.points += amount
+      // 同步更新 localStorage
+      localStorage.setItem('user', JSON.stringify(user.value))
+    }
+  }
+
+  async function refreshUser() {
+    if (!user.value) return
+
+    try {
+      // 这里可以调用API获取最新的用户信息
+      // 暂时使用本地存储的数据
+      const userData = localStorage.getItem('user')
+      if (userData) {
+        user.value = JSON.parse(userData)
+      }
+    } catch (error) {
+      console.error('刷新用户信息失败:', error)
+    }
+  }
+
   return {
     // State
     user,
     accessToken,
     isLoading,
+    isInitialized,
     // Getters
     isAuthenticated,
     isAdmin,
@@ -95,6 +129,8 @@ export const useAuthStore = defineStore('auth', () => {
     register,
     logout,
     checkAuth,
-    deductPoints
+    deductPoints,
+    addPoints,
+    refreshUser
   }
 })

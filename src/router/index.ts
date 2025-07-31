@@ -10,11 +10,6 @@ const router = createRouter({
       component: () => import('@/views/HomeView.vue')
     },
     {
-      path: '/test',
-      name: 'Test',
-      component: () => import('@/views/TestView.vue')
-    },
-    {
       path: '/store',
       name: 'Store',
       component: () => import('@/views/StoreView.vue')
@@ -36,9 +31,9 @@ const router = createRouter({
       component: () => import('@/views/PlazaView.vue')
     },
     {
-      path: '/history',
-      name: 'DrawHistory',
-      component: () => import('@/views/DrawHistoryView.vue'),
+      path: '/box-station',
+      name: 'BoxStation',
+      component: () => import('../views/BoxStationView.vue'),
       meta: { requiresAuth: true }
     },
     {
@@ -49,7 +44,7 @@ const router = createRouter({
       children: [
         {
           path: 'history',
-          name: 'DrawHistory',
+          name: 'MyAccountDrawHistory',
           component: () => import('@/views/DrawHistoryView.vue')
         }
       ]
@@ -86,9 +81,9 @@ const router = createRouter({
 })
 
 // 路由守卫
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _from, next) => {
   const authStore = useAuthStore()
-  
+
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next('/login')
   } else if (to.meta.requiresAdmin && authStore.user?.role !== 'ADMIN') {

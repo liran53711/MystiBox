@@ -12,7 +12,25 @@ app.use(helmet());
 
 // 跨域配置
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: function (origin, callback) {
+    // 允许的源列表
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://127.0.0.1:3000',
+      'http://172.20.10.6:3000', // 你当前的IP
+      process.env.FRONTEND_URL
+    ].filter(Boolean); // 过滤掉undefined值
+
+    // 允许没有origin的请求（比如移动应用、Postman等）
+    if (!origin) return callback(null, true);
+
+    // 检查origin是否在允许列表中，或者是本地开发环境
+    if (allowedOrigins.includes(origin) || origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 
@@ -90,6 +108,9 @@ app.use('/api/pets', require('./routes/pets'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/draw', require('./routes/draw'));
+app.use('/api/boxes', require('./routes/boxes'));
+app.use('/api/showcase', require('./routes/showcase'));
+app.use('/api/social', require('./routes/social'));
 
 // 404处理
 app.use('*', (req, res) => {

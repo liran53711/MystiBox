@@ -3,7 +3,7 @@
     <!-- 宠物图片 -->
     <div class="aspect-square relative">
       <img 
-        :src="pet.image" 
+        :src="pet.babyImageUrl"
         :alt="pet.name"
         class="w-full h-full object-cover"
       />
@@ -20,7 +20,7 @@
       
       <!-- 神秘遮罩（高稀有度） -->
       <div 
-        v-if="pet.rarity >= 3 && !revealed"
+        v-if="pet.rarity == 'UR' && !revealed"
         class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center cursor-pointer"
         @click="revealed = true"
       >
@@ -51,26 +51,19 @@ defineProps<Props>()
 
 const revealed = ref(false)
 
-const getRarityClass = (rarity: number) => {
+const getRarityClass = (rarity: string) => {
   const classes = {
-    1: 'bg-gray-500',    // N
-    2: 'bg-blue-500',    // R
-    3: 'bg-purple-500',  // SR
-    4: 'bg-yellow-500',  // SSR
-    5: 'bg-red-500'      // UR
+    'N': 'bg-gray-500',
+    'R': 'bg-blue-500',
+    'SR': 'bg-purple-500',
+    'SSR': 'bg-yellow-500',
+    'UR': 'bg-red-500'
   }
-  return classes[rarity as keyof typeof classes] || classes[1]
+  return classes[rarity as keyof typeof classes] || classes['N']
 }
 
-const getRarityText = (rarity: number) => {
-  const texts = {
-    1: 'N',
-    2: 'R', 
-    3: 'SR',
-    4: 'SSR',
-    5: 'UR'
-  }
-  return texts[rarity as keyof typeof texts] || 'N'
+const getRarityText = (rarity: string) => {
+  return rarity || 'N'
 }
 </script>
 
@@ -78,6 +71,7 @@ const getRarityText = (rarity: number) => {
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }

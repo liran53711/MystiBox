@@ -25,15 +25,29 @@ model User {
   password  String   // Stored as a hash (e.g., using bcrypt)
   role      UserRole @default(USER)
   points    Int      @default(1000) // Starting points for new users
+  avatar    String   @default("😊") // User avatar emoji
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // --- Relations ---
   userPets      UserPet[]      // Pets owned by this user
+  userBoxes     UserBox[]      // Boxes owned by this user
   drawEvents    DrawEvent[]    // Draw history of this user
   showcasePosts ShowcasePost[] @relation("AuthorPosts") // Posts shared by this user
   comments      Comment[]      // Comments made by this user
   likes         Like[]         // Likes given by this user
+
+  // Friend system relations
+  friendships1       Friendship[]    @relation("User1Friendships") // Friendships where this user is user1
+  friendships2       Friendship[]    @relation("User2Friendships") // Friendships where this user is user2
+  sentFriendRequests FriendRequest[] @relation("SentFriendRequests") // Friend requests sent by this user
+  receivedFriendRequests FriendRequest[] @relation("ReceivedFriendRequests") // Friend requests received by this user
+
+  // Chat and gift relations
+  sentMessages     ChatMessage[] @relation("SentMessages")
+  receivedMessages ChatMessage[] @relation("ReceivedMessages")
+  sentGifts        Gift[]        @relation("SentGifts")
+  receivedGifts    Gift[]        @relation("ReceivedGifts")
 
   @@map("users")
 }
@@ -59,7 +73,9 @@ model Series {
 
   // --- Relations ---
   pets       Pet[]       // Pets belonging to this series
+  userBoxes  UserBox[]   // Boxes of this series owned by users
   drawEvents DrawEvent[] // Draw events associated with this series
+  gifts      Gift[]      // Gifts of this series (box gifts)
 
   @@map("series")
 }
@@ -118,6 +134,12 @@ model UserPet {
 
   // A pet can only be shared once. This creates a one-to-one relation with ShowcasePost.
   showcasePost ShowcasePost?
+
+  // Gift relation - pets can be gifted
+  gifts Gift[]
+
+  // If this pet came from opening a box
+  sourceBox UserBox?
 
   @@index([userId]) // Index for faster querying of a user's pets
   @@map("user_pets")
@@ -210,4 +232,160 @@ model Comment {
   @@map("comments")
 }
 
+// Friendship Model: Represents a friendship between two users
+model Friendship {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  // --- Relations ---
+  user1Id String
+  user1   User   @relation("User1Friendships", fields: [user1Id], references: [id], onDelete: Cascade)
+
+  user2Id String
+  user2   User   @relation("User2Friendships", fields: [user2Id], references: [id], onDelete: Cascade)
+
+  // --- Constraints ---
+  @@unique([user1Id, user2Id]) // Prevent duplicate friendships
+  @@index([user1Id])
+  @@index([user2Id])
+  @@map("friendships")
+}
+
+// FriendRequest Model: Represents a friend request between users
+model FriendRequest {
+  id        String              @id @default(cuid())
+  status    FriendRequestStatus @default(PENDING)
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+
+  // --- Relations ---
+  senderId String
+  sender   User   @relation("SentFriendRequests", fields: [senderId], references: [id], onDelete: Cascade)
+
+  recipientId String
+  recipient   User   @relation("ReceivedFriendRequests", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  // --- Constraints ---
+  @@unique([senderId, recipientId]) // Prevent duplicate requests
+  @@index([recipientId])
+  @@index([senderId])
+  @@map("friend_requests")
+}
+
+// Enum for Friend Request Status
+enum FriendRequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+// ChatMessage Model: Represents messages between friends
+model ChatMessage {
+  id        String      @id @default(cuid())
+  content   String
+  type      MessageType @default(TEXT)
+  createdAt DateTime    @default(now())
+
+  // --- Relations ---
+  senderId String
+  sender   User   @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+
+  recipientId String
+  recipient   User   @relation("ReceivedMessages", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  // For gift messages
+  giftId String?
+  gift   Gift?  @relation(fields: [giftId], references: [id], onDelete: SetNull)
+
+  // --- Indexes ---
+  @@index([senderId, recipientId])
+  @@index([createdAt])
+  @@map("chat_messages")
+}
+
+// Enum for Message Type
+enum MessageType {
+  TEXT
+  GIFT
+}
+
+// Gift Model: Represents gifts sent between users
+model Gift {
+  id        String    @id @default(cuid())
+  type      GiftType
+  message   String?
+  claimed   Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  claimedAt DateTime?
+
+  // --- Relations ---
+  senderId String
+  sender   User   @relation("SentGifts", fields: [senderId], references: [id], onDelete: Cascade)
+
+  recipientId String
+  recipient   User   @relation("ReceivedGifts", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  // For pet gifts
+  userPetId String?
+  userPet   UserPet? @relation(fields: [userPetId], references: [id], onDelete: SetNull)
+
+  // For box gifts (series)
+  seriesId Int?
+  series   Series? @relation(fields: [seriesId], references: [id], onDelete: SetNull)
+
+  // For specific box gifts
+  userBoxId String?
+  userBox   UserBox? @relation(fields: [userBoxId], references: [id], onDelete: SetNull)
+
+  // Related chat messages
+  chatMessages ChatMessage[]
+
+  // --- Indexes ---
+  @@index([recipientId])
+  @@index([senderId])
+  @@map("gifts")
+}
+
+// UserBox Model: Represents a box owned by a user (unopened boxes in station)
+model UserBox {
+  id          String      @id @default(cuid())
+  status      BoxStatus   @default(UNOPENED)
+  obtainedAt  DateTime    @default(now())
+  openedAt    DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // --- Relations ---
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  seriesId Int
+  series   Series @relation(fields: [seriesId], references: [id], onDelete: Restrict)
+
+  // If opened, links to the pet that was obtained
+  resultPetId String? @unique
+  resultPet   UserPet? @relation(fields: [resultPetId], references: [id], onDelete: SetNull)
+
+  // For gifts
+  gifts Gift[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("user_boxes")
+}
+
+// Enum for Box Status
+enum BoxStatus {
+  UNOPENED    // 未开封
+  OPENED      // 已开封
+  TRADING     // 交易中
+  GIFTED      // 已赠送
+}
+
+// Enum for Gift Type
+enum GiftType {
+  PET
+  BOX
+  POINTS
+}
 

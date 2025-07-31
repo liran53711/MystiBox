@@ -3,6 +3,7 @@ export interface User {
   username: string
   role: 'USER' | 'ADMIN'
   points: number
+  avatar: string
   createdAt: string
   updatedAt: string
 }
@@ -10,9 +11,9 @@ export interface User {
 export interface Series {
   id: number
   name: string
-  description?: string
-  image?: string
-  price: number
+  description: string
+  coverImageUrl: string
+  drawPrice: number
   isActive: boolean
   availableFrom?: string
   availableUntil?: string
@@ -25,11 +26,11 @@ export interface Pet {
   id: string
   name: string
   description?: string
-  rarity: number // 1-5 稀有度等级
-  image: string
-  babyImage?: string // 幼体图片
-  adultImage?: string // 成体图片
-  story?: string
+  rarity: 'N' | 'R' | 'SR' | 'SSR' | 'UR' // 稀有度等级
+  image?: string
+  babyImageUrl: string // 幼体图片
+  adultImageUrl: string // 成体图片
+  story: string
   seriesId: number
   series?: Series
   createdAt: string
@@ -37,10 +38,19 @@ export interface Pet {
 }
 
 export interface DrawResult {
+  id: string
+  userId: string
+  petId: string
+  nickname?: string
+  status: 'BABY' | 'ADULT'
+  growthValue: number
+  maxGrowth: number
+  isAdult: boolean
+  lastFedAt?: string
+  createdAt: string
   pet: Pet
-  isNew: boolean
   pointsSpent: number
-  remainingPoints: number
+  remainingPoints?: number
 }
 
 export interface UserPet {
@@ -49,14 +59,17 @@ export interface UserPet {
   petId: string
   isAdult: boolean
   nickname?: string
-  obtainedAt: string
+  obtainedAt?: string
+  createdAt: string
   // 宠物成长相关属性
-  status?: 'BABY' | 'ADULT'
-  growthValue?: number
-  maxGrowth?: number
-  lastInteractedAt?: string | null
+  status: 'BABY' | 'ADULT'
+  growthValue: number
+  maxGrowth: number
+  lastFedAt?: string | null
   user?: User
-  pet?: Pet
+  pet: Pet & {
+    series: Series
+  }
 }
 
 export interface DrawEvent {

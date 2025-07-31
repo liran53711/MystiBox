@@ -23,7 +23,7 @@
       <div class="text-center mb-6">
         <div class="w-32 h-32 mx-auto mb-4 rounded-lg overflow-hidden">
           <img 
-            :src="result.pet.image" 
+            :src="result.pet.babyImageUrl"
             :alt="result.pet.name"
             class="w-full h-full object-cover"
           />

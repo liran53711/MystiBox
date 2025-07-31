@@ -133,9 +133,14 @@ const filteredAndSortedSeries = computed(() => {
 
 onMounted(async () => {
   try {
-    seriesList.value = await seriesApi.getAll()
+    console.log('开始加载系列数据...')
+    const data = await seriesApi.getAll()
+    console.log('系列数据加载成功:', data)
+    seriesList.value = data
   } catch (error) {
     console.error('加载系列失败:', error)
+    // 添加用户友好的错误提示
+    alert('加载系列数据失败，请刷新页面重试')
   } finally {
     loading.value = false
   }

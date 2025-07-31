@@ -1,15 +1,26 @@
 <template>
-  <div 
-    class="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-lg"
+  <div
+    class="card hover-lift cursor-pointer overflow-hidden card-stagger-in"
     @click="$emit('click', series)"
   >
     <!-- 系列封面图 -->
-    <div class="aspect-[4/3] relative overflow-hidden">
-      <img 
-        :src="series.image" 
+    <div class="aspect-[4/3] relative overflow-hidden group">
+      <img
+        :src="series.coverImageUrl"
         :alt="series.name"
-        class="w-full h-full object-cover"
+        class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
       />
+      <!-- 渐变覆盖层 -->
+      <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+
+      <!-- 魔法粒子效果 -->
+      <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+        <div class="absolute top-3 right-3 w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
+        <div class="absolute top-6 right-8 w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse" style="animation-delay: 0.3s;"></div>
+        <div class="absolute top-8 right-5 w-1 h-1 bg-pink-400 rounded-full animate-pulse" style="animation-delay: 0.6s;"></div>
+        <div class="absolute bottom-8 left-4 w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" style="animation-delay: 0.9s;"></div>
+      </div>
+
       <!-- 加载状态 -->
       <div v-if="loading" class="absolute inset-0 bg-gray-200 animate-pulse"></div>
     </div>
@@ -22,7 +33,7 @@
       <!-- 系列统计 -->
       <div class="flex justify-between items-center text-sm text-gray-500">
         <span>共 {{ series.petCount || 0 }} 款</span>
-        <span>{{ series.price || 100 }} 积分</span>
+        <span>{{ series.drawPrice || 100 }} 积分</span>
       </div>
       
       <!-- 稀有度预览 -->

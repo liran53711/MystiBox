@@ -51,14 +51,14 @@
           <!-- 宠物图片 -->
           <div class="aspect-square relative">
             <img
-              :src="userPet.status === 'ADULT' ? (userPet.pet?.adultImage || userPet.pet?.image) : (userPet.pet?.babyImage || userPet.pet?.image)"
+              :src="userPet.status === 'ADULT' ? userPet.pet?.adultImageUrl : userPet.pet?.babyImageUrl"
               :alt="userPet.nickname || userPet.pet?.name"
               class="w-full h-full object-cover"
             />
             <!-- 稀有度标识 -->
             <div class="absolute top-2 right-2">
-              <span :class="getRarityClass(userPet.pet?.rarity || 1)" class="px-2 py-1 rounded text-xs font-bold text-white">
-                {{ getRarityText(userPet.pet?.rarity || 1) }}
+              <span :class="getRarityClass(userPet.pet?.rarity || 'N')" class="px-2 py-1 rounded text-xs font-bold text-white">
+                {{ getRarityText(userPet.pet?.rarity || 'N') }}
               </span>
             </div>
             <!-- 状态标识 -->
@@ -177,16 +177,29 @@
       </div>
     </div>
   </div>
+
+  <!-- 分享模态框 -->
+  <ShareModal
+    v-if="showShareModal && petToShare"
+    :user-pet="petToShare"
+    @close="closeShareModal"
+    @share="handleShare"
+  />
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/store/auth'
+import { usePoints } from '@/composables/usePoints'
 import { useUiStore } from '@/store/ui'
+import { useShowcaseStore } from '@/store/showcase'
+import ShareModal from '@/components/showcase/ShareModal.vue'
 import type { UserPet } from '@/types'
 
 const authStore = useAuthStore()
 const uiStore = useUiStore()
+const showcaseStore = useShowcaseStore()
+const { awardPoints } = usePoints()
 
 // 响应式数据
 const userPets = ref<UserPet[]>([])
@@ -194,96 +207,19 @@ const filterRarity = ref('')
 const filterStatus = ref('')
 const searchQuery = ref('')
 const showNicknameModal = ref(false)
+const showShareModal = ref(false)
 const selectedPet = ref<UserPet | null>(null)
+const petToShare = ref<UserPet | null>(null)
 const newNickname = ref('')
 
-// 模拟数据（实际应该从API获取）
-const mockUserPets: UserPet[] = [
-  {
-    id: '1',
-    userId: 'user1',
-    petId: '1',
-    isAdult: false,
-    nickname: '小绿',
-    obtainedAt: '2024-01-01T00:00:00Z',
-    growthValue: 80,
-    maxGrowth: 100,
-    status: 'BABY',
-    lastInteractedAt: null,
-    pet: {
-      id: '1',
-      name: '小精灵',
-      description: '来自森林的小精灵',
-      rarity: 1, // N级稀有度
-      image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=300&fit=crop',
-      babyImage: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=300&fit=crop',
-      adultImage: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=400&fit=crop',
-      story: '来自森林的小精灵',
-      seriesId: 1,
-      createdAt: '2024-01-01T00:00:00Z',
-      updatedAt: '2024-01-01T00:00:00Z'
-    }
-  },
-  {
-    id: '2',
-    userId: 'user1',
-    petId: '2',
-    isAdult: true,
-    nickname: undefined,
-    obtainedAt: '2024-01-02T00:00:00Z',
-    growthValue: 100,
-    maxGrowth: 100,
-    status: 'ADULT',
-    lastInteractedAt: new Date().toISOString(),
-    pet: {
-      id: '2',
-      name: '森林守护者',
-      description: '守护森林的精灵',
-      rarity: 2, // R级稀有度
-      image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=400&fit=crop',
-      babyImage: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=300&fit=crop',
-      adultImage: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=400&fit=crop',
-      story: '守护森林的精灵',
-      seriesId: 1,
-      createdAt: '2024-01-01T00:00:00Z',
-      updatedAt: '2024-01-01T00:00:00Z'
-    }
-  },
-  {
-    id: '3',
-    userId: 'user1',
-    petId: '3',
-    isAdult: false,
-    nickname: '星辰',
-    obtainedAt: '2024-01-03T00:00:00Z',
-    growthValue: 50,
-    maxGrowth: 100,
-    status: 'BABY',
-    lastInteractedAt: null,
-    pet: {
-      id: '3',
-      name: '小星星',
-      description: '闪闪发光的小星星',
-      rarity: 3, // SR级稀有度
-      image: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=300&h=300&fit=crop',
-      babyImage: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=300&h=300&fit=crop',
-      adultImage: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=400&h=400&fit=crop',
-      story: '闪闪发光的小星星',
-      seriesId: 1,
-      createdAt: '2024-01-01T00:00:00Z',
-      updatedAt: '2024-01-01T00:00:00Z'
-    }
-  }
-]
+
 
 // 计算属性
 const filteredPets = computed(() => {
   let filtered = userPets.value
 
   if (filterRarity.value) {
-    const rarityMap: { [key: string]: number } = { 'N': 1, 'R': 2, 'SR': 3, 'SSR': 4, 'UR': 5 }
-    const rarityValue = rarityMap[filterRarity.value]
-    filtered = filtered.filter(pet => pet.pet?.rarity === rarityValue)
+    filtered = filtered.filter(pet => pet.pet?.rarity === filterRarity.value)
   }
 
   if (filterStatus.value) {
@@ -302,26 +238,19 @@ const filteredPets = computed(() => {
 })
 
 // 方法
-const getRarityClass = (rarity: number) => {
+const getRarityClass = (rarity: string) => {
   const classes = {
-    1: 'bg-gray-500',    // N
-    2: 'bg-blue-500',    // R
-    3: 'bg-purple-500',  // SR
-    4: 'bg-yellow-500',  // SSR
-    5: 'bg-red-500'      // UR
+    'N': 'bg-gray-500',
+    'R': 'bg-blue-500',
+    'SR': 'bg-purple-500',
+    'SSR': 'bg-yellow-500',
+    'UR': 'bg-red-500'
   }
-  return classes[rarity as keyof typeof classes] || classes[1]
+  return classes[rarity as keyof typeof classes] || classes['N']
 }
 
-const getRarityText = (rarity: number) => {
-  const texts = {
-    1: 'N',
-    2: 'R',
-    3: 'SR',
-    4: 'SSR',
-    5: 'UR'
-  }
-  return texts[rarity as keyof typeof texts] || 'N'
+const getRarityText = (rarity: string) => {
+  return rarity || 'N'
 }
 
 const canFeedToday = (userPet: any) => {
@@ -352,28 +281,72 @@ const saveNickname = () => {
   closeNicknameModal()
 }
 
-const feedPet = (userPet: any) => {
+const feedPet = async (userPet: any) => {
   if (!canFeedToday(userPet)) return
 
   userPet.growthValue = Math.min(userPet.growthValue + 10, userPet.maxGrowth)
   userPet.lastInteractedAt = new Date().toISOString()
 
+  // 奖励积分
+  await awardPoints('FEED_PET')
+
   // 这里应该调用API更新宠物状态
   console.log('喂食宠物:', userPet.id)
 }
 
-const evolvePet = (userPet: any) => {
+const evolvePet = async (userPet: any) => {
   if (userPet.status === 'BABY' && userPet.growthValue >= userPet.maxGrowth) {
     userPet.status = 'ADULT'
+
+    // 奖励进化积分
+    await awardPoints('PET_EVOLVE')
+
     // 这里应该调用API更新宠物状态
     console.log('宠物进化:', userPet.id)
   }
 }
 
 const sharePet = (userPet: any) => {
-  // 跳转到宠物广场分享页面
-  console.log('分享宠物:', userPet.id)
-  // 这里应该实现分享功能
+  // 检查宠物是否为成体
+  if (userPet.status !== 'ADULT') {
+    alert('只有成体宠物才能分享到广场！')
+    return
+  }
+
+  // 打开分享模态框
+  petToShare.value = userPet
+  showShareModal.value = true
+}
+
+const handleShare = async (shareData: any) => {
+  try {
+    // 添加到广场 store
+    const newPost = showcaseStore.addPost({
+      userPet: shareData.userPet,
+      content: shareData.content,
+      allowSale: shareData.allowSale,
+      salePrice: shareData.salePrice,
+      author: {
+        id: authStore.user?.id || 'anonymous',
+        username: authStore.user?.username || '匿名用户'
+      }
+    })
+
+    console.log('分享宠物到广场:', newPost)
+
+    alert('分享成功！你的宠物已经展示在广场上了！')
+
+    // 可以跳转到广场查看
+    // router.push('/plaza')
+  } catch (error) {
+    console.error('分享失败:', error)
+    alert('分享失败，请重试')
+  }
+}
+
+const closeShareModal = () => {
+  showShareModal.value = false
+  petToShare.value = null
 }
 
 const openGiftModal = (userPet: any) => {
@@ -383,11 +356,22 @@ const openGiftModal = (userPet: any) => {
   window.location.href = '/friends'
 }
 
+// 获取用户宠物
+const fetchUserPets = async () => {
+  try {
+    const { petsApi } = await import('@/api/pets')
+    const pets = await petsApi.getUserPets()
+    userPets.value = pets
+  } catch (error) {
+    console.error('获取宠物收藏失败:', error)
+    userPets.value = []
+  }
+}
+
 // 生命周期
 onMounted(() => {
   if (authStore.isAuthenticated) {
-    // 这里应该从API获取用户的宠物
-    userPets.value = mockUserPets
+    fetchUserPets()
   }
 })
 </script>

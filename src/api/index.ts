@@ -2,7 +2,7 @@ import axios from 'axios'
 import { useAuthStore } from '@/store/auth'
 
 // 使用模拟数据而不是真实后端
-const USE_MOCK_API = true
+const USE_MOCK_API = false
 
 // 模拟数据
 const mockUsers = new Map()
@@ -54,12 +54,83 @@ const mockSeries = [
       { id: '11', name: '星座守护者', rarity: 'SR', story: '守护星座的使者', babyImageUrl: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=300&h=300&fit=crop', adultImageUrl: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=400&h=400&fit=crop' },
       { id: '12', name: '宇宙之神', rarity: 'UR', story: '创造宇宙的神明', babyImageUrl: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=300&h=300&fit=crop', adultImageUrl: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=400&h=400&fit=crop' }
     ]
+  },
+  {
+    id: 4,
+    name: '樱花仙境系列',
+    description: '春日樱花飞舞的梦幻世界，每一片花瓣都承载着美好的愿望',
+    image: 'https://images.unsplash.com/photo-1522383225653-ed111181a951?w=400&h=400&fit=crop',
+    price: 120,
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    pets: [
+      { id: '13', name: '樱花精灵', rarity: 'R', story: '在樱花树下诞生的可爱精灵', babyImageUrl: 'https://images.unsplash.com/photo-1522383225653-ed111181a951?w=300&h=300&fit=crop', adultImageUrl: 'https://images.unsplash.com/photo-1522383225653-ed111181a951?w=400&h=400&fit=crop' },
+      { id: '14', name: '春风仙子', rarity: 'SR', story: '掌控春风与花瓣的仙子', babyImageUrl: 'https://images.unsplash.com/photo-1522383225653-ed111181a951?w=300&h=300&fit=crop', adultImageUrl: 'https://images.unsplash.com/photo-1522383225653-ed111181a951?w=400&h=400&fit=crop' },
+      { id: '15', name: '樱花女王', rarity: 'SSR', story: '统治樱花仙境的高贵女王', babyImageUrl: 'https://images.unsplash.com/photo-1522383225653-ed111181a951?w=300&h=300&fit=crop', adultImageUrl: 'https://images.unsplash.com/photo-1522383225653-ed111181a951?w=400&h=400&fit=crop' }
+    ]
+  },
+  {
+    id: 5,
+    name: '深海奇迹系列',
+    description: '探索神秘深海的奇妙生物，发现海洋深处的无尽宝藏',
+    image: 'https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=400&h=400&fit=crop',
+    price: 110,
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    pets: [
+      { id: '16', name: '珊瑚小鱼', rarity: 'N', story: '生活在珊瑚礁中的小鱼', babyImageUrl: 'https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=300&h=300&fit=crop', adultImageUrl: 'https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=400&h=400&fit=crop' },
+      { id: '17', name: '海月水母', rarity: 'R', story: '如月光般美丽的水母', babyImageUrl: 'https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=300&h=300&fit=crop', adultImageUrl: 'https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=400&h=400&fit=crop' },
+      { id: '18', name: '海龙王子', rarity: 'SSR', story: '深海王国的高贵王子', babyImageUrl: 'https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=300&h=300&fit=crop', adultImageUrl: 'https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=400&h=400&fit=crop' }
+    ]
+  },
+  {
+    id: 6,
+    name: '星空幻想系列',
+    description: '来自遥远星空的神秘使者，带着宇宙的智慧与力量',
+    image: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=400&h=400&fit=crop',
+    price: 160,
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    pets: [
+      { id: '19', name: '星尘小精灵', rarity: 'N', story: '由星尘凝聚而成的小精灵', babyImageUrl: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=300&h=300&fit=crop', adultImageUrl: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=400&h=400&fit=crop' },
+      { id: '20', name: '月光独角兽', rarity: 'SR', story: '沐浴在月光下的神圣独角兽', babyImageUrl: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=300&h=300&fit=crop', adultImageUrl: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=400&h=400&fit=crop' },
+      { id: '21', name: '星座守护者', rarity: 'UR', story: '掌控星座命运的古老守护者', babyImageUrl: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=300&h=300&fit=crop', adultImageUrl: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=400&h=400&fit=crop' }
+    ]
+  },
+  {
+    id: 7,
+    name: '魔法森林系列',
+    description: '充满魔法的古老森林，每一个角落都隐藏着神奇的生物',
+    image: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=400&fit=crop',
+    price: 130,
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    pets: [
+      { id: '22', name: '蘑菇小妖', rarity: 'N', story: '住在蘑菇屋里的可爱小妖', babyImageUrl: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=300&h=300&fit=crop', adultImageUrl: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=400&fit=crop' },
+      { id: '23', name: '森林守护神', rarity: 'SSR', story: '守护整片森林的古老神灵', babyImageUrl: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=300&h=300&fit=crop', adultImageUrl: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=400&fit=crop' }
+    ]
   }
 ]
 
 // 真实API客户端
+const getApiBaseURL = () => {
+  // 在开发环境中，自动检测后端地址
+  if (import.meta.env.DEV) {
+    // 如果前端运行在非localhost地址，后端也应该在同一个主机上
+    const currentHost = window.location.hostname
+    if (currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
+      return `http://${currentHost}:3003/api`
+    }
+  }
+  return 'http://localhost:3003/api'
+}
+
 const realApiClient = axios.create({
-  baseURL: 'http://localhost:3003/api',
+  baseURL: getApiBaseURL(),
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -75,14 +146,60 @@ realApiClient.interceptors.request.use((config) => {
   return config
 })
 
+// 错误处理工具函数
+const handleApiError = (error: any) => {
+  const status = error.response?.status
+  const message = error.response?.data?.message || error.message
+  const url = error.config?.url || 'unknown'
+
+  // 根据错误类型决定是否记录到控制台
+  const shouldLog = (status: number, url: string) => {
+    // 不记录这些常见的非关键错误
+    const silentErrors = [
+      '/api/social/friends',
+      '/api/social/friend-requests',
+      '/api/boxes/stats'
+    ]
+
+    // 404错误且是已知的可选API，不记录
+    if (status === 404 && silentErrors.some(path => url.includes(path))) {
+      return false
+    }
+
+    // 401错误通常是认证问题，只在开发环境记录
+    if (status === 401 && import.meta.env.PROD) {
+      return false
+    }
+
+    return true
+  }
+
+  // 只在需要时记录错误
+  if (shouldLog(status, url)) {
+    console.error(`API错误 [${status}] ${url}:`, message)
+  }
+
+  return { status, message, url }
+}
+
 // 响应拦截器 - 处理错误
 realApiClient.interceptors.response.use(
   (response) => response.data,
   (error) => {
-    if (error.response?.status === 401) {
+    const errorInfo = handleApiError(error)
+
+    if (errorInfo.status === 401) {
+      // 只有在特定情况下才自动登出
       const authStore = useAuthStore()
-      authStore.logout()
+      const errorMessage = errorInfo.message || ''
+
+      // 如果是token过期或无效，才自动登出
+      if (errorMessage.includes('token') || errorMessage.includes('expired') || errorMessage.includes('invalid')) {
+        console.log('Token无效，自动登出')
+        authStore.logout()
+      }
     }
+
     return Promise.reject(error)
   }
 )
@@ -118,17 +235,18 @@ const mockApiClient = {
     if (url === '/auth/login') {
       const { username, password } = data
       if ((username === 'demo' && password === 'demo123') ||
-          (username === 'testuser' && password === 'test123456')) {
+          (username === 'testuser' && password === 'test123456') ||
+          (username === 'admin' && password === 'admin123456')) {
         const user = {
-          id: '1',
+          id: username === 'admin' ? 'admin' : '1',
           username: username,
           email: `${username}@example.com`,
-          points: 1000,
-          role: 'USER',
+          points: username === 'admin' ? 10000 : (username === 'demo' ? 5000 : 1000),
+          role: username === 'admin' ? 'ADMIN' : 'USER',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         }
-        mockUsers.set('1', user)
+        mockUsers.set(user.id, user)
         return {
           user,
           accessToken: 'mock-token-' + Date.now()
@@ -192,11 +310,27 @@ const mockApiClient = {
       // 扣除积分
       authStore.user.points -= series.price
 
+      // 根据稀有度奖励积分
+      const rarityBonusPoints = {
+        'N': 0,
+        'R': 20,
+        'SR': 50,
+        'SSR': 100,
+        'UR': 200
+      }
+
+      const bonusPoints = rarityBonusPoints[targetRarity] || 0
+      if (bonusPoints > 0) {
+        authStore.user.points += bonusPoints
+      }
+
       return {
         pet: pet,
         isNew: Math.random() > 0.3, // 70% 概率是新宠物
         pointsSpent: series.price,
-        remainingPoints: authStore.user.points
+        remainingPoints: authStore.user.points,
+        bonusPoints: bonusPoints,
+        rarity: targetRarity
       }
     }
 

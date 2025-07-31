@@ -4,101 +4,243 @@ const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 开始数据库种子数据初始化...');
+  console.log('开始数据库种子数据...');
 
-  // 创建管理员用户
-  const adminPassword = await bcrypt.hash('admin123456', 10);
-  const admin = await prisma.user.upsert({
-    where: { username: 'admin' },
-    update: {},
-    create: {
-      username: 'admin',
-      password: adminPassword,
-      points: 10000,
-      role: 'ADMIN',
-    },
-  });
-  console.log('✅ 管理员用户创建完成:', admin.username);
+  // 清理现有数据（保留系列和宠物）
+  await prisma.showcasePost.deleteMany();
+  await prisma.userBox.deleteMany();
+  await prisma.userPet.deleteMany();
+  await prisma.friendship.deleteMany();
+  await prisma.friendRequest.deleteMany();
+  await prisma.drawEvent.deleteMany();
+  await prisma.like.deleteMany();
+  await prisma.comment.deleteMany();
+  await prisma.gift.deleteMany();
 
   // 创建测试用户
-  const testPassword = await bcrypt.hash('test123456', 10);
-  const testUser = await prisma.user.upsert({
-    where: { username: 'testuser' },
-    update: {},
-    create: {
-      username: 'testuser',
-      password: testPassword,
-      points: 1000,
-      role: 'USER',
-    },
+  const hashedPassword = await bcrypt.hash('123456', 10);
+
+  const users = await Promise.all([
+    prisma.user.upsert({
+      where: { username: 'admin' },
+      update: {},
+      create: {
+        username: 'admin',
+        password: hashedPassword,
+        role: 'ADMIN',
+        points: 10000,
+        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face'
+      }
+    }),
+    prisma.user.upsert({
+      where: { username: 'Alice' },
+      update: {},
+      create: {
+        username: 'Alice',
+        password: hashedPassword,
+        points: 5000,
+        avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face'
+      }
+    }),
+    prisma.user.upsert({
+      where: { username: 'Bob' },
+      update: {},
+      create: {
+        username: 'Bob',
+        password: hashedPassword,
+        points: 3000,
+        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face'
+      }
+    }),
+    prisma.user.upsert({
+      where: { username: 'Charlie' },
+      update: {},
+      create: {
+        username: 'Charlie',
+        password: hashedPassword,
+        points: 2000,
+        avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face'
+      }
+    }),
+    prisma.user.upsert({
+      where: { username: 'Diana' },
+      update: {},
+      create: {
+        username: 'Diana',
+        password: hashedPassword,
+        points: 4000,
+        avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face'
+      }
+    })
+  ]);
+
+  console.log('创建了用户:', users.map(u => u.username));
+
+  // 创建好友关系（所有用户互为好友）
+  const friendships = [];
+  for (let i = 0; i < users.length; i++) {
+    for (let j = i + 1; j < users.length; j++) {
+      friendships.push(
+        prisma.friendship.create({
+          data: {
+            user1Id: users[i].id,
+            user2Id: users[j].id
+          }
+        })
+      );
+    }
+  }
+  await Promise.all(friendships);
+  console.log('创建了好友关系');
+
+  // 获取所有系列和宠物
+  const series = await prisma.series.findMany({
+    include: { pets: true }
   });
-  console.log('✅ 测试用户创建完成:', testUser.username);
 
-  // 创建盲盒系列
-  const forestSeries = await prisma.series.upsert({
-    where: { name: '森林精灵系列' },
-    update: {},
-    create: {
-      name: '森林精灵系列',
-      description: '来自神秘森林的可爱精灵们，每一只都拥有独特的魔法能力',
-      drawPrice: 100,
-      coverImageUrl: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=400&fit=crop',
-      isActive: true,
-    },
-  });
+  if (series.length === 0) {
+    console.log('没有找到系列数据，请先运行系列和宠物的种子数据');
+    return;
+  }
 
-  const oceanSeries = await prisma.series.upsert({
-    where: { name: '海洋冒险系列' },
-    update: {},
-    create: {
-      name: '海洋冒险系列',
-      description: '深海中的奇妙生物，带你探索未知的海底世界',
-      drawPrice: 120,
-      coverImageUrl: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=400&h=400&fit=crop',
-      isActive: true,
-    },
-  });
+  // 为每个用户创建宠物
+  for (const user of users) {
+    for (const seriesItem of series) {
+      for (const pet of seriesItem.pets) {
+        // 随机决定宠物状态
+        const status = Math.random() > 0.5 ? 'ADULT' : 'BABY';
+        const growthValue = status === 'ADULT' ? 100 : Math.floor(Math.random() * 80);
 
-  const starSeries = await prisma.series.upsert({
-    where: { name: '星空守护系列' },
-    update: {},
-    create: {
-      name: '星空守护系列',
-      description: '来自星空的神秘守护者，守护着宇宙的秘密',
-      drawPrice: 150,
-      coverImageUrl: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=400&h=400&fit=crop',
-      isActive: true,
-    },
-  });
+        await prisma.userPet.create({
+          data: {
+            userId: user.id,
+            petId: pet.id,
+            status,
+            growthValue,
+            maxGrowth: 100,
+            nickname: Math.random() > 0.7 ? `${pet.name}${Math.floor(Math.random() * 100)}` : null,
+            lastInteractedAt: Math.random() > 0.5 ? new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000) : null
+          }
+        });
+      }
+    }
 
-  console.log('✅ 盲盒系列创建完成');
+    // 为每个用户创建盲盒
+    for (const seriesItem of series) {
+      const boxCount = Math.floor(Math.random() * 3) + 1; // 1-3个盲盒
+      for (let i = 0; i < boxCount; i++) {
+        await prisma.userBox.create({
+          data: {
+            userId: user.id,
+            seriesId: seriesItem.id,
+            status: 'UNOPENED',
+            obtainedAt: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000) // 过去7天内随机时间
+          }
+        });
+      }
+    }
+  }
 
-  // 创建宠物数据
-  await prisma.pet.createMany({
-    data: [
-      // 森林精灵系列
-      { name: '小精灵', rarity: 'N', seriesId: forestSeries.id, story: '来自森林的小精灵', babyImageUrl: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=300&fit=crop', adultImageUrl: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=400&fit=crop' },
-      { name: '森林守护者', rarity: 'R', seriesId: forestSeries.id, story: '守护森林的精灵', babyImageUrl: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=300&fit=crop', adultImageUrl: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=400&fit=crop' },
-      { name: '古树之灵', rarity: 'SR', seriesId: forestSeries.id, story: '千年古树的灵魂', babyImageUrl: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=300&fit=crop', adultImageUrl: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=400&fit=crop' },
-      { name: '森林女王', rarity: 'SSR', seriesId: forestSeries.id, story: '森林的统治者', babyImageUrl: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=300&fit=crop', adultImageUrl: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=400&fit=crop' },
+  console.log('为所有用户创建了宠物和盲盒');
 
-      // 海洋冒险系列
-      { name: '小海星', rarity: 'N', seriesId: oceanSeries.id, story: '可爱的小海星', babyImageUrl: 'https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=300&h=300&fit=crop', adultImageUrl: 'https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=400&h=400&fit=crop' },
-      { name: '珊瑚精灵', rarity: 'R', seriesId: oceanSeries.id, story: '珊瑚礁的守护者', babyImageUrl: 'https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=300&h=300&fit=crop', adultImageUrl: 'https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=400&h=400&fit=crop' },
-      { name: '深海巨兽', rarity: 'SR', seriesId: oceanSeries.id, story: '深海的神秘生物', babyImageUrl: 'https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=300&h=300&fit=crop', adultImageUrl: 'https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=400&h=400&fit=crop' },
-      { name: '海洋之王', rarity: 'SSR', seriesId: oceanSeries.id, story: '统治海洋的王者', babyImageUrl: 'https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=300&h=300&fit=crop', adultImageUrl: 'https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=400&h=400&fit=crop' },
+  // 为每个用户在广场展示一只随机宠物
+  for (const user of users) {
+    const userPets = await prisma.userPet.findMany({
+      where: {
+        userId: user.id,
+        status: 'ADULT' // 只展示成体宠物
+      }
+    });
 
-      // 星空守护系列
-      { name: '小星星', rarity: 'N', seriesId: starSeries.id, story: '闪闪发光的小星星', babyImageUrl: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=300&h=300&fit=crop', adultImageUrl: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=400&h=400&fit=crop' },
-      { name: '月亮精灵', rarity: 'R', seriesId: starSeries.id, story: '月光下的精灵', babyImageUrl: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=300&h=300&fit=crop', adultImageUrl: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=400&h=400&fit=crop' },
-      { name: '星座守护者', rarity: 'SR', seriesId: starSeries.id, story: '守护星座的使者', babyImageUrl: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=300&h=300&fit=crop', adultImageUrl: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=400&h=400&fit=crop' },
-      { name: '宇宙之神', rarity: 'UR', seriesId: starSeries.id, story: '创造宇宙的神明', babyImageUrl: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=300&h=300&fit=crop', adultImageUrl: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=400&h=400&fit=crop' },
-    ]
-  });
+    if (userPets.length > 0) {
+      const randomPet = userPets[Math.floor(Math.random() * userPets.length)];
+      const contents = [
+        '我的新宠物太可爱了！',
+        '终于养成了这只宠物！',
+        '分享一下我的珍藏宠物~',
+        '这只宠物陪伴了我很久',
+        '大家觉得我的宠物怎么样？',
+        '今天心情不错，分享个宠物',
+        '这是我最喜欢的宠物之一'
+      ];
 
-  console.log('✅ 宠物数据创建完成');
+      await prisma.showcasePost.create({
+        data: {
+          content: contents[Math.floor(Math.random() * contents.length)],
+          authorId: user.id,
+          userPetId: randomPet.id,
+          createdAt: new Date(Date.now() - Math.random() * 3 * 24 * 60 * 60 * 1000) // 过去3天内随机时间
+        }
+      });
+    }
+  }
 
-  console.log('🎉 数据库种子数据初始化完成！');
+  console.log('为所有用户创建了广场展示');
+
+  // 为广场帖子添加一些点赞和评论
+  const posts = await prisma.showcasePost.findMany();
+  const comments = [
+    '太可爱了！',
+    '好羡慕啊！',
+    '这只宠物真漂亮',
+    '我也想要一只',
+    '养得真好！',
+    '颜值很高呢',
+    '好想摸摸'
+  ];
+
+  for (const post of posts) {
+    // 随机添加点赞
+    const likeUsers = users.filter(() => Math.random() > 0.5);
+    for (const likeUser of likeUsers) {
+      if (likeUser.id !== post.authorId) {
+        await prisma.like.create({
+          data: {
+            userId: likeUser.id,
+            postId: post.id
+          }
+        });
+      }
+    }
+
+    // 随机添加评论
+    const commentUsers = users.filter(() => Math.random() > 0.7);
+    for (const commentUser of commentUsers) {
+      if (commentUser.id !== post.authorId) {
+        await prisma.comment.create({
+          data: {
+            content: comments[Math.floor(Math.random() * comments.length)],
+            authorId: commentUser.id,
+            postId: post.id,
+            createdAt: new Date(Date.now() - Math.random() * 2 * 24 * 60 * 60 * 1000)
+          }
+        });
+      }
+    }
+  }
+
+  console.log('为广场帖子添加了点赞和评论');
+
+  // 创建一些抽卡记录
+  for (const user of users) {
+    const drawCount = Math.floor(Math.random() * 5) + 1;
+    for (let i = 0; i < drawCount; i++) {
+      const randomSeries = series[Math.floor(Math.random() * series.length)];
+      await prisma.drawEvent.create({
+        data: {
+          userId: user.id,
+          seriesId: randomSeries.id,
+          amount: 1,
+          cost: randomSeries.drawPrice,
+          createdAt: new Date(Date.now() - Math.random() * 10 * 24 * 60 * 60 * 1000)
+        }
+      });
+    }
+  }
+
+  console.log('创建了抽卡记录');
+
+  console.log('数据库种子数据完成！');
 }
 
 main()

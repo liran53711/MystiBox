@@ -46,7 +46,7 @@
               <div class="flex justify-between items-center">
                 <span style="color: var(--color-text-secondary);">抽取价格:</span>
                 <span class="font-bold" style="color: var(--color-accent); font-size: var(--text-lg);">
-                  💰 {{ series.price }} 积分
+                  💰 {{ series.drawPrice }} 积分
                 </span>
               </div>
               <div class="flex justify-between items-center">
@@ -89,13 +89,13 @@
               抽取中...
             </span>
             <span v-else class="flex items-center justify-center">
-              🎲 抽取盲盒 ({{ series.price }} 积分)
+              📦 购买盲盒 ({{ series.drawPrice }} 积分)
             </span>
           </button>
 
           <!-- 未登录提示 -->
           <div v-else class="text-center card p-6">
-            <p class="text-neutral-text-secondary mb-4">请先登录才能抽取盲盒</p>
+            <p class="text-neutral-text-secondary mb-4">请先登录才能购买盲盒</p>
             <BaseButton variant="primary" @click="uiStore.openLoginModal">
               立即登录
             </BaseButton>
@@ -116,6 +116,16 @@
     <div v-else class="text-center py-16">
       <p class="text-neutral-text-secondary">系列不存在</p>
     </div>
+
+    <!-- 开盒动画覆盖层 -->
+    <GachaAnimationOverlay
+      :is-visible="uiStore.isGachaPlaying"
+      :result-pet="uiStore.gachaResult?.[0]"
+      :rarity="uiStore.gachaResult?.[0]?.pet?.rarity"
+      @close="handleGachaClose"
+      @draw-again="handleDrawAgain"
+      @go-to-collection="handleGoToCollection"
+    />
   </div>
 </template>
 
@@ -124,15 +134,19 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import BaseButton from '@/components/base/BaseButton.vue'
 import DrawAnimation from '@/components/draw/DrawAnimation.vue'
+import GachaAnimationOverlay from '@/components/gacha/GachaAnimationOverlay.vue'
 import { useAuthStore } from '@/store/auth'
-import { useUIStore } from '@/store/ui'
+import { useUiStore } from '@/store/ui'
 import { seriesApi } from '@/api/series'
 import { drawApi } from '@/api/draw'
+import { boxesApi } from '@/api/boxes'
+import { useRouter } from 'vue-router'
 import type { Series, DrawResult } from '@/types'
 
 const route = useRoute()
+const router = useRouter()
 const authStore = useAuthStore()
-const uiStore = useUIStore()
+const uiStore = useUiStore()
 
 const seriesId = computed(() => Number(route.params.id))
 const series = ref<Series | null>(null)
@@ -162,7 +176,7 @@ const loadSeries = async () => {
   }
 }
 
-// 处理抽取
+// 处理购买盲盒
 const handleDraw = async () => {
   if (!series.value || !authStore.isAuthenticated) return
 
@@ -170,14 +184,21 @@ const handleDraw = async () => {
     isDrawing.value = true
     errorMessage.value = ''
 
-    const result = await drawApi.drawPet(series.value.id)
-    drawResult.value = result
+    const result = await boxesApi.purchaseBoxes(series.value.id, 1)
+
+    console.log('购买盲盒结果:', result)
 
     // 更新用户积分
-    await authStore.refreshUser()
+    if (authStore.user) {
+      authStore.user.points = result.remainingPoints
+    }
+
+    // 显示成功消息并跳转到盲盒驿站
+    alert(result.message)
+    router.push('/box-station')
   } catch (error: any) {
-    console.error('Draw failed:', error)
-    errorMessage.value = error.response?.data?.message || '抽取失败，请重试'
+    console.error('购买盲盒失败:', error)
+    errorMessage.value = error.response?.data?.message || '购买失败，请重试'
   } finally {
     isDrawing.value = false
   }
@@ -192,6 +213,25 @@ const handleAnimationClose = () => {
 const handleContinueDraw = () => {
   drawResult.value = null
   // 可以在这里添加继续抽取的逻辑
+}
+
+// 处理开盒动画关闭
+const handleGachaClose = () => {
+  uiStore.endGacha()
+}
+
+// 处理再次抽取
+const handleDrawAgain = () => {
+  uiStore.endGacha()
+  // 触发新的抽取
+  handleDraw()
+}
+
+// 处理前往收藏
+const handleGoToCollection = () => {
+  uiStore.endGacha()
+  // 跳转到我的宠物页面
+  // router.push('/my-pets')
 }
 
 onMounted(() => {

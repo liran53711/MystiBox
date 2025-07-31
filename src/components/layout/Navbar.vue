@@ -39,11 +39,19 @@
             class="text-white hover:text-yellow-200 transition-colors font-medium"
             style="font-family: var(--font-body);"
           >
-            我的收藏
+            我的宠物
           </RouterLink>
           <RouterLink
             v-if="authStore.isAuthenticated"
-            to="/history"
+            to="/box-station"
+            class="text-white hover:text-yellow-200 transition-colors font-medium"
+            style="font-family: var(--font-body);"
+          >
+            盲盒驿站
+          </RouterLink>
+          <RouterLink
+            v-if="authStore.isAuthenticated"
+            to="/my-account/history"
             class="text-white hover:text-yellow-200 transition-colors font-medium"
             style="font-family: var(--font-body);"
           >
@@ -142,11 +150,11 @@
                   个人中心
                 </RouterLink>
                 <RouterLink
-                  to="/my-account/history"
+                  to="/box-station"
                   class="block px-4 py-2 text-sm text-neutral-text-primary hover:bg-white/20 transition-colors"
                   @click="showUserMenu = false"
                 >
-                  抽取历史
+                  盲盒驿站
                 </RouterLink>
                 <div v-if="authStore.isAdmin" class="border-t border-white/20 my-2"></div>
                 <RouterLink

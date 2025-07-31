@@ -27,9 +27,26 @@
   
   .btn-primary {
     @apply bg-accent-500 hover:bg-accent-600 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg;
+    opacity: 1 !important;
   }
-  
+
   .btn-secondary {
-    @apply bg-white/20 hover:bg-white/30 text-neutral-text-primary font-semibold py-3 px-6 rounded-xl border border-white/30 transition-all duration-300;
+    @apply bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 px-6 rounded-xl border border-gray-300 transition-all duration-300;
+    opacity: 1 !important;
+  }
+
+  .btn-warning {
+    @apply bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300;
+    opacity: 1 !important;
+  }
+
+  .btn-danger {
+    @apply bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300;
+    opacity: 1 !important;
+  }
+
+  .btn-success {
+    @apply bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300;
+    opacity: 1 !important;
   }
 }
