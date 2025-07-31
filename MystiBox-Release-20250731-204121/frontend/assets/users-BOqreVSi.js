@@ -1,0 +1,1 @@
+import{I as a}from"./index-o0ffgrYm.js";const t={async searchUsers(s){return(await a.get("/users/search",{params:{q:s}})).data},async getUserById(s){return(await a.get(`/users/${s}`)).data},async updateAvatar(s){return(await a.patch("/users/avatar",{avatar:s})).data}};export{t as usersApi};

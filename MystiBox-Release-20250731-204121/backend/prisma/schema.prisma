@@ -1,0 +1,391 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// 1. Prisma Client Generator
+// Defines how the Prisma Client is generated (in this case, for TypeScript).
+generator client {
+  provider = "prisma-client-js"
+}
+
+// 2. Datasource Block
+// Configures the database connection.
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// =====================================================================
+// ==                            CORE MODELS                          ==
+// =====================================================================
+
+// User Model: Represents a registered user in the system.
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  password  String   // Stored as a hash (e.g., using bcrypt)
+  role      UserRole @default(USER)
+  points    Int      @default(1000) // Starting points for new users
+  avatar    String   @default("😊") // User avatar emoji
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // --- Relations ---
+  userPets      UserPet[]      // Pets owned by this user
+  userBoxes     UserBox[]      // Boxes owned by this user
+  drawEvents    DrawEvent[]    // Draw history of this user
+  showcasePosts ShowcasePost[] @relation("AuthorPosts") // Posts shared by this user
+  comments      Comment[]      // Comments made by this user
+  likes         Like[]         // Likes given by this user
+
+  // Friend system relations
+  friendships1       Friendship[]    @relation("User1Friendships") // Friendships where this user is user1
+  friendships2       Friendship[]    @relation("User2Friendships") // Friendships where this user is user2
+  sentFriendRequests FriendRequest[] @relation("SentFriendRequests") // Friend requests sent by this user
+  receivedFriendRequests FriendRequest[] @relation("ReceivedFriendRequests") // Friend requests received by this user
+
+  // Chat and gift relations
+  sentMessages     ChatMessage[] @relation("SentMessages")
+  receivedMessages ChatMessage[] @relation("ReceivedMessages")
+  sentGifts        Gift[]        @relation("SentGifts")
+  receivedGifts    Gift[]        @relation("ReceivedGifts")
+
+  @@map("users")
+}
+
+// Enum for User Roles
+enum UserRole {
+  USER
+  ADMIN
+}
+
+// Series Model: Represents a collection of pets, i.e., a gacha series.
+model Series {
+  id              Int       @id @default(autoincrement())
+  name            String    @unique
+  description     String?
+  coverImageUrl   String?
+  drawPrice       Int       @default(100) // Price for a single draw
+  isActive        Boolean   @default(true) // Allows admins to disable a series without deleting it
+  availableFrom   DateTime? // Optional start date for availability
+  availableUntil  DateTime? // Optional end date for availability
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // --- Relations ---
+  pets       Pet[]       // Pets belonging to this series
+  userBoxes  UserBox[]   // Boxes of this series owned by users
+  drawEvents DrawEvent[] // Draw events associated with this series
+  gifts      Gift[]      // Gifts of this series (box gifts)
+
+  @@map("series")
+}
+
+// Pet Model: Represents a specific type of pet (the template/blueprint).
+model Pet {
+  id            String   @id @default(cuid())
+  name          String
+  rarity        Rarity
+  babyImageUrl  String   // Image for the baby form
+  adultImageUrl String   // Image for the adult form
+  story         String?  // Background story or flavor text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // --- Relations ---
+  seriesId Int
+  series   Series  @relation(fields: [seriesId], references: [id], onDelete: Cascade) // If a series is deleted, its pets are also deleted.
+
+  ownedBy UserPet[] // Instances of this pet owned by users
+
+  @@unique([seriesId, name]) // A pet name must be unique within a series
+  @@map("pets")
+}
+
+// Enum for Pet Rarity
+enum Rarity {
+  N
+  R
+  SR
+  SSR
+  UR // For special events
+}
+
+// UserPet Model: Represents an instance of a Pet owned by a User. This is the "collectible" item.
+model UserPet {
+  id          String         @id @default(cuid())
+  nickname    String?        // User can give a custom name
+  growthValue Int            @default(0)
+  maxGrowth   Int            @default(100)
+  status      UserPetStatus  @default(BABY)
+  lastInteractedAt DateTime? // To limit daily interactions
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  // --- Relations ---
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade) // If a user is deleted, their pets are also deleted.
+
+  petId String
+  pet   Pet    @relation(fields: [petId], references: [id], onDelete: Restrict) // Prevent deleting a Pet template if it's owned by any user.
+
+  // This links the pet to the specific draw event it came from.
+  drawEventId String?
+  drawEvent   DrawEvent?     @relation(fields: [drawEventId], references: [id], onDelete: SetNull)
+
+  // A pet can only be shared once. This creates a one-to-one relation with ShowcasePost.
+  showcasePost ShowcasePost?
+
+  // Gift relation - pets can be gifted
+  gifts Gift[]
+
+  // If this pet came from opening a box
+  sourceBox UserBox?
+
+  @@index([userId]) // Index for faster querying of a user's pets
+  @@map("user_pets")
+}
+
+// Enum for the status of a user's owned pet.
+enum UserPetStatus {
+  BABY
+  ADULT
+}
+
+// DrawEvent Model: Records a single gacha draw action (can be a single or a 10-draw).
+// This is our "Order" or "Transaction" model.
+model DrawEvent {
+  id        String   @id @default(cuid())
+  amount    Int      // 1 or 10
+  cost      Int      // Total points spent for this event
+  createdAt DateTime @default(now())
+
+  // --- Relations ---
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  seriesId Int
+  series   Series @relation(fields: [seriesId], references: [id], onDelete: Restrict)
+
+  // This is the collection of pets received from this single event.
+  drawnPets UserPet[]
+
+  @@index([userId]) // Index for faster querying of user's draw history
+  @@map("draw_events")
+}
+
+
+
+// ShowcasePost Model: Represents a post in the "Pets Plaza" shared by a user.
+model ShowcasePost {
+  id        String   @id @default(cuid())
+  content   String?  // The user's message/story for the post
+  createdAt DateTime @default(now())
+
+  // --- Relations ---
+  authorId String
+  author   User   @relation("AuthorPosts", fields: [authorId], references: [id], onDelete: Cascade)
+
+  // This creates a one-to-one relationship, ensuring a pet instance is shared only once.
+  userPetId String  @unique
+  userPet   UserPet @relation(fields: [userPetId], references: [id], onDelete: Cascade)
+
+  comments Comment[] // Comments on this post
+  likes    Like[]    // Likes for this post
+
+  @@index([authorId])
+  @@map("showcase_posts")
+}
+
+// Like Model: Represents a user's "like" on a ShowcasePost.
+model Like {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  // --- Relations ---
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  postId String
+  post   ShowcasePost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  // --- Constraints & Indexes ---
+  @@unique([userId, postId]) // A user can only like a post once.
+  @@index([postId])
+  @@map("likes")
+}
+
+// Comment Model: Represents a comment on a ShowcasePost.
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // --- Relations ---
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  postId String
+  post   ShowcasePost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId]) // Index for faster retrieval of comments for a post
+  @@map("comments")
+}
+
+// Friendship Model: Represents a friendship between two users
+model Friendship {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  // --- Relations ---
+  user1Id String
+  user1   User   @relation("User1Friendships", fields: [user1Id], references: [id], onDelete: Cascade)
+
+  user2Id String
+  user2   User   @relation("User2Friendships", fields: [user2Id], references: [id], onDelete: Cascade)
+
+  // --- Constraints ---
+  @@unique([user1Id, user2Id]) // Prevent duplicate friendships
+  @@index([user1Id])
+  @@index([user2Id])
+  @@map("friendships")
+}
+
+// FriendRequest Model: Represents a friend request between users
+model FriendRequest {
+  id        String              @id @default(cuid())
+  status    FriendRequestStatus @default(PENDING)
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+
+  // --- Relations ---
+  senderId String
+  sender   User   @relation("SentFriendRequests", fields: [senderId], references: [id], onDelete: Cascade)
+
+  recipientId String
+  recipient   User   @relation("ReceivedFriendRequests", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  // --- Constraints ---
+  @@unique([senderId, recipientId]) // Prevent duplicate requests
+  @@index([recipientId])
+  @@index([senderId])
+  @@map("friend_requests")
+}
+
+// Enum for Friend Request Status
+enum FriendRequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+// ChatMessage Model: Represents messages between friends
+model ChatMessage {
+  id        String      @id @default(cuid())
+  content   String
+  type      MessageType @default(TEXT)
+  createdAt DateTime    @default(now())
+
+  // --- Relations ---
+  senderId String
+  sender   User   @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+
+  recipientId String
+  recipient   User   @relation("ReceivedMessages", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  // For gift messages
+  giftId String?
+  gift   Gift?  @relation(fields: [giftId], references: [id], onDelete: SetNull)
+
+  // --- Indexes ---
+  @@index([senderId, recipientId])
+  @@index([createdAt])
+  @@map("chat_messages")
+}
+
+// Enum for Message Type
+enum MessageType {
+  TEXT
+  GIFT
+}
+
+// Gift Model: Represents gifts sent between users
+model Gift {
+  id        String    @id @default(cuid())
+  type      GiftType
+  message   String?
+  claimed   Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  claimedAt DateTime?
+
+  // --- Relations ---
+  senderId String
+  sender   User   @relation("SentGifts", fields: [senderId], references: [id], onDelete: Cascade)
+
+  recipientId String
+  recipient   User   @relation("ReceivedGifts", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  // For pet gifts
+  userPetId String?
+  userPet   UserPet? @relation(fields: [userPetId], references: [id], onDelete: SetNull)
+
+  // For box gifts (series)
+  seriesId Int?
+  series   Series? @relation(fields: [seriesId], references: [id], onDelete: SetNull)
+
+  // For specific box gifts
+  userBoxId String?
+  userBox   UserBox? @relation(fields: [userBoxId], references: [id], onDelete: SetNull)
+
+  // Related chat messages
+  chatMessages ChatMessage[]
+
+  // --- Indexes ---
+  @@index([recipientId])
+  @@index([senderId])
+  @@map("gifts")
+}
+
+// UserBox Model: Represents a box owned by a user (unopened boxes in station)
+model UserBox {
+  id          String      @id @default(cuid())
+  status      BoxStatus   @default(UNOPENED)
+  obtainedAt  DateTime    @default(now())
+  openedAt    DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // --- Relations ---
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  seriesId Int
+  series   Series @relation(fields: [seriesId], references: [id], onDelete: Restrict)
+
+  // If opened, links to the pet that was obtained
+  resultPetId String? @unique
+  resultPet   UserPet? @relation(fields: [resultPetId], references: [id], onDelete: SetNull)
+
+  // For gifts
+  gifts Gift[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("user_boxes")
+}
+
+// Enum for Box Status
+enum BoxStatus {
+  UNOPENED    // 未开封
+  OPENED      // 已开封
+  TRADING     // 交易中
+  GIFTED      // 已赠送
+}
+
+// Enum for Gift Type
+enum GiftType {
+  PET
+  BOX
+  POINTS
+}
+

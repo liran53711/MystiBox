@@ -61,8 +61,12 @@ if [ ! -d "node_modules" ]; then
     print_info "正在安装前端依赖，请稍候..."
     npm install
     if [ $? -ne 0 ]; then
-        print_error "前端依赖安装失败"
-        exit 1
+        print_warning "标准安装失败，尝试使用 --legacy-peer-deps..."
+        npm install --legacy-peer-deps
+        if [ $? -ne 0 ]; then
+            print_error "前端依赖安装失败"
+            exit 1
+        fi
     fi
     print_success "前端依赖安装完成"
 else
@@ -77,9 +81,13 @@ if [ ! -d "node_modules" ]; then
     print_info "正在安装后端依赖，请稍候..."
     npm install
     if [ $? -ne 0 ]; then
-        print_error "后端依赖安装失败"
-        cd ..
-        exit 1
+        print_warning "标准安装失败，尝试使用 --legacy-peer-deps..."
+        npm install --legacy-peer-deps
+        if [ $? -ne 0 ]; then
+            print_error "后端依赖安装失败"
+            cd ..
+            exit 1
+        fi
     fi
     print_success "后端依赖安装完成"
 else

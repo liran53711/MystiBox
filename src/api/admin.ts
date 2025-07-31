@@ -1,4 +1,4 @@
-import { apiClient } from './client'
+import { apiClient } from './index'
 
 export const adminApi = {
   // 初始化管理员

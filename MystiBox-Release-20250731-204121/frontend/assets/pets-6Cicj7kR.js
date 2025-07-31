@@ -1,0 +1,1 @@
+import{I as s}from"./index-o0ffgrYm.js";const p={async getUserPets(){return await s.get("/pets/my-collection")},async updateNickname(e,t){return await s.patch(`/pets/${e}/nickname`,{nickname:t})},async feedPet(e){return await s.post(`/pets/${e}/feed`)},async evolvePet(e){return await s.post(`/pets/${e}/evolve`)}};export{p as petsApi};
